@@ -9,7 +9,9 @@
 		MonetizationController.Start()
 		MonetizationController.RefreshOwnedPasses(player)
 		MonetizationController.OwnsPass(player, passKey) -> boolean
-		MonetizationController.HasFeature(player, "Chronos" | "ExtendedInfo" | ...) -> boolean
+		MonetizationController.HasFeature(player, "ManualLighting" | "ExtendedInfo" | ...) -> boolean
+		(строки-фичи заданы в GamePasses.lua: VipPhotoFrame, ExtendedInfo,
+		InteriorAccess, ManualLighting, EraSkins)
 		MonetizationController.PromptGamePass(player, passKey)
 		MonetizationController.PromptProduct(player, productKey)
 ]]
@@ -195,5 +197,14 @@ function MonetizationController.Start()
 end
 
 Remotes.OnServerEvent(Remotes.Names.RequestPurchase, onRequestPurchase)
+
+-- Настройки уровня Game Pass (п.14.1): значение пишется через общий
+-- UpdateSettings, но включать может только владелец пасса (п.16).
+PlayerDataService.RegisterSettingValidator("EraEffectsOn", function(player: Player, value: any): boolean
+	if value == true then
+		return MonetizationController.HasFeature(player, "EraSkins")
+	end
+	return true
+end)
 
 return MonetizationController

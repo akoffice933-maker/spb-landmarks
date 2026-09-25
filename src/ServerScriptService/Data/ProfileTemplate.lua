@@ -20,6 +20,7 @@ local ProfileTemplate = {
 		MusicVolume = 0.7,
 		AmbientVolume = 1,
 		UIVolume = 0.8,
+		EraEffectsOn = false,
 		OnboardingCompleted = false,
 	},
 

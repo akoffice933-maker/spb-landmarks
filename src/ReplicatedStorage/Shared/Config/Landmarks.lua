@@ -478,6 +478,11 @@ local SETTINGS: { [string]: SettingDef } = {
 		Max = 1,
 		DisplayName = "Звук интерфейса",
 	},
+	EraEffectsOn = {
+		Type = "boolean",
+		Default = false,
+		DisplayName = "Эффекты белых ночей (пасс «Костюмы эпохи»)",
+	},
 	OnboardingCompleted = { Type = "boolean", Default = false, DisplayName = "Онбординг пройден" },
 }
 

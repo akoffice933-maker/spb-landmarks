@@ -17,12 +17,14 @@ local ShopUI = require(script.Parent.ShopUI)
 local CollectionUI = require(script.Parent.CollectionUI)
 local SettingsUI = require(script.Parent.SettingsUI)
 local OnboardingUI = require(script.Parent.OnboardingUI)
+local EraUI = require(script.Parent.EraUI)
 
 local ICONS = {
 	Shop = "rbxassetid://10709791437",
 	Collection = "rbxassetid://1070976152",
 	Settings = "rbxassetid://10709750322",
 	Help = "rbxassetid://10723346233",
+	Era = "rbxassetid://10723417608", -- lucide: landmark
 }
 
 local TopbarUI = {}
@@ -94,8 +96,9 @@ function TopbarUI.Start()
 	bindPanelIcon("Shop", 10, ICONS.Shop, "Магазин", ShopUI)
 	bindPanelIcon("Collection", 11, ICONS.Collection, "Коллекция", CollectionUI)
 	bindPanelIcon("Settings", 12, ICONS.Settings, "Настройки", SettingsUI)
+	bindPanelIcon("Era", 13, ICONS.Era, "Эпоха", EraUI)
 
-	bindActionIcon("Help", 13, ICONS.Help, "Помощь", function()
+	bindActionIcon("Help", 14, ICONS.Help, "Помощь", function()
 		OnboardingUI.Show()
 	end)
 end

@@ -53,6 +53,15 @@ local profiles: { [Player]: any } = {}
 local troves: { [Player]: any } = {}
 local pushPending: { [Player]: boolean } = {}
 
+-- Пер-полевые валидаторы настроек (бизнес-правила сверх схемы, п.16).
+-- Регистрируются из доменных сервисов (см. MonetizationController), чтобы
+-- сам модуль данных не тянул зависимость на монетизацию (защита от циклов).
+local settingValidators: { [string]: (player: Player, value: any) -> boolean } = {}
+
+function PlayerDataService.RegisterSettingValidator(key: string, validator: (player: Player, value: any) -> boolean)
+	settingValidators[key] = validator
+end
+
 PlayerDataService.ProfileReady = Signal.new() -- (player, data)
 PlayerDataService.DataChanged = Signal.new() -- (player, key)
 
@@ -209,6 +218,16 @@ end
 
 function PlayerDataService.SetSetting(player: Player, key: string, value: any): boolean
 	if not Validate.SettingKey(key) or not Validate.SettingValue(key, value) then
+		return false
+	end
+
+	-- Бизнес-правила (например, настройку уровня пасса схема не проверит):
+	local validator = settingValidators[key]
+	if validator and not validator(player, value) then
+		Remotes.FireClient(Remotes.Names.Notify, player, {
+			Text = "Этот параметр доступен владельцам соответствующего Game Pass.",
+			Kind = "warning",
+		})
 		return false
 	end
 
