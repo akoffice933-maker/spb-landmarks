@@ -32,6 +32,11 @@ local function ownsFeature(feature: string): boolean
 	return false
 end
 
+-- Текущий сохранённый наряд (v2.1 живёт в профиле)
+local function currentOutfitId(): string
+	return DataClient.GetSetting("WardrobeOutfit", "None")
+end
+
 local function outfitRow(outfit: AvatarPresets.OutfitPreset, order: number): Frame
 	local row = UIInstances.create("Frame", {
 		Name = ("Outfit_%s"):format(outfit.Id),
@@ -63,6 +68,7 @@ local function outfitRow(outfit: AvatarPresets.OutfitPreset, order: number): Fra
 		TextColor3 = Color3.fromRGB(235, 238, 245),
 		Text = if outfit.RequiresFeature and not ownsFeature(outfit.RequiresFeature)
 			then ("%s 🔒"):format(outfit.Name)
+			elseif currentOutfitId() == outfit.Id then ("%s ✓ надето"):format(outfit.Name)
 			else outfit.Name,
 		Parent = row,
 	})
@@ -121,8 +127,10 @@ local function poseRow(pose: AvatarPresets.PosePreset, order: number): TextButto
 end
 
 local function buildPanel()
+	-- Перестраиваем на каждом открытии: подсветка «✓ надето» актуальна.
 	if panel then
-		return
+		panel:Destroy()
+		panel = nil
 	end
 	gui = UIInstances.getScreenGui("SPB_AvatarStudio", 40)
 	gui.Enabled = false
@@ -168,7 +176,7 @@ local function buildPanel()
 		Position = UDim2.fromOffset(12, 90),
 		BackgroundTransparency = 1,
 		ScrollBarThickness = 4,
-		CanvasSize = UDim2.fromOffset(0, 332),
+		CanvasSize = UDim2.fromOffset(0, 382),
 		Parent = frame,
 	}, {
 		UIInstances.create("UIListLayout", {
@@ -176,6 +184,28 @@ local function buildPanel()
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	}) :: ScrollingFrame
+
+	-- Кнопка «назад к стандартному Roblox-виду» — сброс сохранённого наряда
+	local backToDefault = UIInstances.create("TextButton", {
+		Name = "Outfit_None",
+		Size = UDim2.new(1, -8, 0, 40),
+		BackgroundTransparency = 0.5,
+		BackgroundColor3 = if currentOutfitId() == "None"
+			then Color3.fromRGB(58, 88, 68)
+			else Color3.fromRGB(52, 58, 70),
+		Text = if currentOutfitId() == "None"
+			then "Стандартный (Roblox) ✓ активен"
+			else "Стандартный (Roblox) — вернуть",
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		TextColor3 = Color3.fromRGB(225, 230, 240),
+		LayoutOrder = 0,
+	}, { UIInstances.corner(), UIInstances.stroke() }) :: TextButton
+	backToDefault.Parent = wardrobeScroll
+	backToDefault.MouseButton1Click:Connect(function()
+		Remotes.FireServer(Remotes.Names.RequestWardrobe, "None")
+		AvatarStudioUI.Close()
+	end)
 
 	for index, outfit in AvatarPresets.Outfits do
 		outfitRow(outfit, index).Parent = wardrobeScroll

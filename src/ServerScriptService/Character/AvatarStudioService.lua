@@ -176,6 +176,18 @@ local function onRequestWardrobe(player: Player, payload: any)
 	end
 	lastRequestAt[player] = now
 
+	-- «Стандартный вид» — сбрасываем сохранённый наряд; дефолтный аватар
+	-- Roblox вернётся сам собой на следующем спауне.
+	if payload == "None" then
+		PlayerDataService.SetSetting(player, OUTFIT_SETTING, "None")
+		notify(
+			player,
+			"Гардероб: стандартный вид вернётся после следующего спауна",
+			"info"
+		)
+		return
+	end
+
 	local outfit = AvatarPresets.GetOutfitById(payload)
 	if not outfit then
 		return
