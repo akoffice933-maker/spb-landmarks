@@ -24,6 +24,7 @@ local DeveloperProducts = require(Shared.Config.DeveloperProducts)
 
 local UIInstances = require(script.Parent.Parent.UI.UIInstances)
 local DataClient = require(script.Parent.Parent.Data.DataClient)
+local UISoundClient = require(script.Parent.Parent.Audio.UISoundClient)
 
 local player = Players.LocalPlayer
 
@@ -289,6 +290,8 @@ local function showSession(payload: any)
 	doneButton.AnchorPoint = Vector2.new(0.5, 1)
 	doneButton.Position = UDim2.new(0.5, 0, 1, -8)
 	doneButton.Activated:Connect(function()
+		-- Звук затвора — единственный «громкий» UI-звук по ТЗ (фото = ключевая механика).
+		UISoundClient.Play("Shutter")
 		endSession(true)
 	end)
 

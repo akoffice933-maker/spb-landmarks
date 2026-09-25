@@ -19,6 +19,22 @@ local TweenService = game:GetService("TweenService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared.Config.Theme)
 
+-- Звуки тостов (success/error). Ленивый require: UIInstances — низкоуровневый
+-- модуль и не должен зависеть от аудио при загрузке (п.12 ТЗ).
+local UISoundClient: any = nil
+local function uiSound(): any
+	if UISoundClient == nil then
+		local audioFolder = script.Parent.Parent:FindFirstChild("Audio")
+		local module = audioFolder and audioFolder:FindFirstChild("UISoundClient")
+		if module then
+			UISoundClient = require(module)
+		else
+			UISoundClient = false
+		end
+	end
+	return if UISoundClient == false then nil else UISoundClient
+end
+
 local player = Players.LocalPlayer
 
 local UIInstances = {}
@@ -151,6 +167,15 @@ function UIInstances.Notify(payload: { Text: string, Kind: string? })
 	local container = toastContainer :: Frame
 
 	local accent = TOAST_COLORS[payload.Kind or "info"] or Theme.Colors.Accent
+
+	-- П.12 ТЗ: звук только у важных тостов (успех/ошибка), info/warning — тихие.
+	local toastSound = if payload.Kind == "success" then "Success" elseif payload.Kind == "error" then "Error" else nil
+	if toastSound then
+		local sound = uiSound()
+		if sound then
+			sound.Play(toastSound)
+		end
+	end
 
 	local toast = UIInstances.create("Frame", {
 		Name = "Toast",

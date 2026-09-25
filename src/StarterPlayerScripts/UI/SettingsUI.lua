@@ -153,7 +153,7 @@ function SettingsUI.Open()
 		local closeButton: TextButton
 		_panel, body, closeButton = UIInstances.makePanel(gui, {
 			Title = "Настройки",
-			Size = UDim2.fromOffset(360, 220),
+			Size = UDim2.fromOffset(360, 280),
 		})
 
 		UIInstances.create("UIListLayout", {
@@ -164,6 +164,7 @@ function SettingsUI.Open()
 
 		buildSlider(body, "MusicVolume", 1)
 		buildSlider(body, "AmbientVolume", 2)
+		buildSlider(body, "UIVolume", 3)
 
 		closeButton.Activated:Connect(function()
 			SettingsUI.Close()

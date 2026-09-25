@@ -35,6 +35,7 @@ local TopbarUI = require(StarterPlayerScripts:WaitForChild("UI").TopbarUI)
 -- Контроллеры
 local ZoneClient = require(StarterPlayerScripts:WaitForChild("Zones").ZoneClient)
 local PhotoModeClient = require(StarterPlayerScripts:WaitForChild("PhotoSpot").PhotoModeClient)
+local UISoundClient = require(StarterPlayerScripts:WaitForChild("Audio").UISoundClient)
 
 DataClient.Start()
 
@@ -55,6 +56,7 @@ TeleportFade.Start()
 OnboardingUI.Start()
 HUDUI.Start()
 TopbarUI.Start()
+UISoundClient.Start()
 
 ZoneClient.Start()
 PhotoModeClient.Start()

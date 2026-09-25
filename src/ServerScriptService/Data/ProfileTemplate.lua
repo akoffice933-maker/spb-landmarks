@@ -19,6 +19,7 @@ local ProfileTemplate = {
 	Settings = {
 		MusicVolume = 0.7,
 		AmbientVolume = 1,
+		UIVolume = 0.8,
 		OnboardingCompleted = false,
 	},
 

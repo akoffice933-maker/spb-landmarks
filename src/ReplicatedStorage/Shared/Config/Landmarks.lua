@@ -471,6 +471,13 @@ local SETTINGS: { [string]: SettingDef } = {
 		Max = 1,
 		DisplayName = "Громкость эмбиента",
 	},
+	UIVolume = {
+		Type = "number",
+		Default = 0.8,
+		Min = 0,
+		Max = 1,
+		DisplayName = "Звук интерфейса",
+	},
 	OnboardingCompleted = { Type = "boolean", Default = false, DisplayName = "Онбординг пройден" },
 }
 

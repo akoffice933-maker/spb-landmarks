@@ -54,6 +54,7 @@ DataStore; без него всё работает на `ProfileStore.Mock` (с�
 | Инфо-таблички | `Interaction/InfoService` | Базовый текст всем, расширенный с «Гидом» |
 | Указатели улиц | BootstrapProject.server.lua | Физические таблички над улицами (п.5.1) |
 | День/ночь | `Lighting/LightingController` | 4 пресета + цикл 25 мин + фонари авто |
+| Звук | `Zones/ZoneClient` + `Audio/UISoundClient` | Каналы Ambient/Music/UI, UI-звуки авто, слайдеры в настройках |
 | Спавны / телепорты | `Spawn/SpawnService` | Выбор спавна + платный FastTravel |
 | Онбординг | `UI/OnboardingUI` | 4 слайда, один раз |
 | UI | `StarterPlayerScripts/UI/*` | Магазин, коллекция, HUD, настройки — кодом |
@@ -107,7 +108,8 @@ src/
     │   ├── SpawnChoiceUI.lua     -- выбор точки старта
     │   ├── TeleportFade.lua      -- затемнение при телепортации
     │   └── OnboardingUI.lua      -- туториал из 4 экранов
-    ├── Zones/ZoneClient.lua      -- эмбиент по зонам (SoundGroup, кроссфейд)
+    ├── Zones/ZoneClient.lua      -- эмбиент/музыка по зонам (SoundGroup, кроссфейд)
+    ├── Audio/UISoundClient.lua   -- UI-звуки: клик автоподключён, shutter, тосты
     └── PhotoSpot/PhotoModeClient.lua -- скрытие UI + рамка + фильтры
 ```
 
