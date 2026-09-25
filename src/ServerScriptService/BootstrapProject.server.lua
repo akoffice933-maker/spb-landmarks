@@ -414,10 +414,19 @@ if not buildingsFolder:FindFirstChild("Building_Petropavlovsky") then
 
 	-- Стены крепости (квадрат)
 	local wallColor = Color3.fromRGB(150, 145, 135)
+	-- Северная стена разбита на два пролёта: в центре (x=-130) широкий проём
+	-- под Северные ворота / Дворцовый мост (см. BootstrapArtPass).
 	makePart({
-		Name = "Fortress_Wall_N",
-		Size = Vector3.new(280, 10, 6),
-		Position = Vector3.new(-160, 5, -480),
+		Name = "Fortress_Wall_NW",
+		Size = Vector3.new(158, 10, 6),
+		Position = Vector3.new(-221, 5, -480),
+		Color = wallColor,
+		Parent = buildingsFolder,
+	})
+	makePart({
+		Name = "Fortress_Wall_NE",
+		Size = Vector3.new(98, 10, 6),
+		Position = Vector3.new(-69, 5, -480),
 		Color = wallColor,
 		Parent = buildingsFolder,
 	})
