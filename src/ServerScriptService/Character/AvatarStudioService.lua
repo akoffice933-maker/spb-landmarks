@@ -40,6 +40,24 @@ local function notify(player: Player, text: string, kind: string?)
 	Remotes.FireClient(Remotes.Names.Notify, player, { Text = text, Kind = kind or "info" })
 end
 
+-- Единая проверка доступности наряда: пасс (RequiresFeature) и/или
+-- квестовый прогресс (RequiresQuest, v2.3). Используется во всех трёх местах:
+-- RequestWardrobe, валидатор настройки, автоприменение на спауне.
+local function isOutfitAuthorized(player: Player, outfit: AvatarPresets.OutfitPreset): boolean
+	if outfit.RequiresFeature and not MonetizationController.HasFeature(player, outfit.RequiresFeature) then
+		return false
+	end
+	local quest = outfit.RequiresQuest
+	if quest then
+		local data = PlayerDataService.GetData(player)
+		local count = if data then (data :: any)[quest.Kind] else nil
+		if type(count) ~= "number" or count < quest.Count then
+			return false
+		end
+	end
+	return true
+end
+
 local function getHumanoid(character: Model?): Humanoid?
 	if not character then
 		return nil
@@ -192,8 +210,13 @@ local function onRequestWardrobe(player: Player, payload: any)
 	if not outfit then
 		return
 	end
-	if outfit.RequiresFeature and not MonetizationController.HasFeature(player, outfit.RequiresFeature) then
-		notify(player, ("Этот наряд — за пасс «%s»"):format(outfit.RequiresFeature), "warn")
+	if not isOutfitAuthorized(player, outfit) then
+		local why = if outfit.RequiresQuest
+			then ("нужен прогресс квеста «Охотник за тенями» (%d снимка)"):format(
+				outfit.RequiresQuest.Count
+			)
+			else ("нужен пасс «%s»"):format(tostring(outfit.RequiresFeature))
+		notify(player, ("«%s» пока закрыт: %s"):format(outfit.Name, why), "warn")
 		return
 	end
 
@@ -248,7 +271,8 @@ local function applySavedOutfit(player: Player)
 	if not outfit then
 		return
 	end
-	if outfit.RequiresFeature and not MonetizationController.HasFeature(player, outfit.RequiresFeature) then
+	-- Квестовая/пассная авторизация: отозванный пасс → молчаливый пропуск
+	if not isOutfitAuthorized(player, outfit) then
 		return
 	end
 	AvatarStudioService.ApplyOutfit(player, outfit)
@@ -272,10 +296,7 @@ function AvatarStudioService.Start()
 		if not outfit then
 			return false
 		end
-		if outfit.RequiresFeature then
-			return MonetizationController.HasFeature(player, outfit.RequiresFeature)
-		end
-		return true
+		return isOutfitAuthorized(player, outfit)
 	end)
 
 	Remotes.OnServerEvent(Remotes.Names.RequestWardrobe, onRequestWardrobe)

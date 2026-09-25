@@ -19,6 +19,8 @@ export type OutfitPreset = {
 	Name: string,
 	Desc: string,
 	RequiresFeature: string?,
+	-- Квестовая авторизация (v2.3): требуется прогресс в профиле, едваучитываемый
+	RequiresQuest: { Kind: string, Count: number }?,
 	Head: Color3,
 	Torso: Color3,
 	LeftArm: Color3,
@@ -88,6 +90,19 @@ AvatarPresets.Outfits = {
 		RightArm = Color3.fromRGB(214, 178, 84),
 		LeftLeg = Color3.fromRGB(34, 34, 40),
 		RightLeg = Color3.fromRGB(34, 34, 40),
+	},
+	{
+		Id = "Nocturne",
+		Name = "Ноктюрн",
+		Desc = "Награда квеста «Охотник за тенями» (3 ночных снимка)",
+		RequiresFeature = nil,
+		RequiresQuest = { Kind = "ShadowCaptures", Count = 3 },
+		Head = Color3.fromRGB(196, 188, 210),
+		Torso = Color3.fromRGB(46, 50, 88),
+		LeftArm = Color3.fromRGB(46, 50, 88),
+		RightArm = Color3.fromRGB(46, 50, 88),
+		LeftLeg = Color3.fromRGB(24, 26, 44),
+		RightLeg = Color3.fromRGB(24, 26, 44),
 	},
 }
 

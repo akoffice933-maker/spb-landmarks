@@ -346,4 +346,10 @@ function PhotoModeClient.Start()
 	end)
 end
 
+--[[ Для квеста «Охотник за тенями»: серверу нужно знать, в фото-режиме ли
+	игрок. Отдаём только флаг — внутреннюю логику сессии не трогаем. ]]
+function PhotoModeClient.IsInSession(): boolean
+	return inSession
+end
+
 return PhotoModeClient

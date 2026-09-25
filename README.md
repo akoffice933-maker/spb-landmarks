@@ -57,7 +57,8 @@ DataStore; без него всё работает на `ProfileStore.Mock` (с�
 | День/ночь | `Lighting/LightingController` | 4 пресета + цикл 25 мин + фонари авто |
 | Звук | `Zones/ZoneClient` + `Audio/UISoundClient` | Каналы Ambient/Music/UI, UI-звуки авто, слайдеры в настройках |
 | «Костюмы эпохи» | `UI/EraUI` + валидатор в `MonetizationController` | Эффекты белых ночей (клиент-слой), ролеплей-костюмы — отдельный этап |
-| Гардероб и позы | `Character/AvatarStudioService` + `UI/AvatarStudioUI` | v2.0: 4 наряда HumanoidDescription (1 — за пасс), 4 позы серверными C0 на R15, кулдауны и валидация |
+| Гардероб и позы | `Character/AvatarStudioService` + `UI/AvatarStudioUI` | v2.0-2.2: наряды HumanoidDescription (пасс + квест), позы C0 (R15), сохранение в профиль, «✓ надето» |
+| Квест «Охотник за тенями» | `Quests/ShadowHunterService` + `Quests/ShadowHunterClient` | Ночная стелс-фотография: Тень у случайной фото-точки, сектор взгляда 3 с, фото-режим = маскировка, награда — наряд «Ноктюрн» за 3 снимка |
 | Спавны / телепорты | `Spawn/SpawnService` | Выбор спавна + платный FastTravel |
 | Онбординг | `UI/OnboardingUI` | 4 слайда, один раз |
 | UI | `StarterPlayerScripts/UI/*` | Магазин, коллекция, HUD, настройки — кодом |

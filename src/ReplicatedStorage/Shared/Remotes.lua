@@ -37,6 +37,7 @@ Remotes.Names = {
 	FastTravelReady = "FastTravelReady",
 	LightingState = "LightingState",
 	PurchaseFinished = "PurchaseFinished",
+	ShadowQuestState = "ShadowQuestState",
 
 	-- Клиент -> сервер
 	PhotoCaptured = "PhotoCaptured",
@@ -49,6 +50,8 @@ Remotes.Names = {
 	OnboardingCompleted = "OnboardingCompleted",
 	RequestWardrobe = "RequestWardrobe",
 	RequestPose = "RequestPose",
+	RequestShadowCapture = "RequestShadowCapture",
+	ShadowHunterState = "ShadowHunterState",
 
 	-- RemoteFunction (клиент запрашивает, сервер отвечает)
 	GetInfoBoard = "GetInfoBoard",

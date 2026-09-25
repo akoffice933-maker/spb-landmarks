@@ -37,6 +37,28 @@ local function currentOutfitId(): string
 	return DataClient.GetSetting("WardrobeOutfit", "None")
 end
 
+-- Прогресс «Охотника за тенями» берём из клиентского квест-модуля (ленивый,
+-- чтобы не гонять круговые зависимости App-уровня).
+local ShadowHunterClient: any = nil
+local function questClient(): any
+	if not ShadowHunterClient then
+		ShadowHunterClient = require(script.Parent.Parent.Quests.ShadowHunterClient)
+	end
+	return ShadowHunterClient
+end
+
+local function questLockText(outfit: AvatarPresets.OutfitPreset): string?
+	local quest = outfit.RequiresQuest
+	if not quest then
+		return nil
+	end
+	local captures = questClient().GetCaptures()
+	if captures >= quest.Count then
+		return nil
+	end
+	return ("🌑 %d/%d"):format(captures, quest.Count)
+end
+
 local function outfitRow(outfit: AvatarPresets.OutfitPreset, order: number): Frame
 	local row = UIInstances.create("Frame", {
 		Name = ("Outfit_%s"):format(outfit.Id),
@@ -68,6 +90,7 @@ local function outfitRow(outfit: AvatarPresets.OutfitPreset, order: number): Fra
 		TextColor3 = Color3.fromRGB(235, 238, 245),
 		Text = if outfit.RequiresFeature and not ownsFeature(outfit.RequiresFeature)
 			then ("%s 🔒"):format(outfit.Name)
+			elseif questLockText(outfit) then ("%s %s"):format(outfit.Name, questLockText(outfit))
 			elseif currentOutfitId() == outfit.Id then ("%s ✓ надето"):format(outfit.Name)
 			else outfit.Name,
 		Parent = row,

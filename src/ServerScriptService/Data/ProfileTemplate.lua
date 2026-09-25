@@ -16,6 +16,7 @@ local ProfileTemplate = {
 	PhotoCount = 0,
 	OwnedPasses = {}, -- кэш владения Game Pass, обновляется при входе игрока
 	UnlockedFilters = {}, -- id купленных фото-фильтров
+	ShadowCaptures = 0, -- квест «Охотник за тенями»: сколько Теней схвачено камерой
 	Settings = {
 		MusicVolume = 0.7,
 		AmbientVolume = 1,
