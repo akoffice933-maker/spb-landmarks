@@ -785,3 +785,581 @@ end
 print(
 	"[SPB Landmarks] Блокаут карты сгенерирован: зоны, силуэты, фонари, скамейки, таблички."
 )
+--================================================================================
+-- ИНТЕРЬЕРЫ (п.3.1 ТЗ) — обязательный блок v1.0: входы/выходы/закрытые зоны.
+--================================================================================
+
+local interiorsFolder = workspace:FindFirstChild("Interiors") or folder("Interiors", workspace)
+
+-- Прямоугольная комната с полом и стенами без потолка — оптимистичная заглушка.
+local function room(parent: Instance, name: string, size: Vector3, center: Vector3, color: Color3): Model
+	local holder = Instance.new("Model")
+	holder.Name = name
+	holder.Parent = parent
+
+	makePart({
+		Name = "Floor",
+		Size = Vector3.new(size.X, 2, size.Z),
+		Position = center + Vector3.new(0, 1, 0),
+		Color = color,
+		Material = Enum.Material.Marble,
+		Parent = holder,
+	})
+
+	local wallH = size.Y
+	local t = 2
+	local wallColor = color:Lerp(Color3.new(1, 1, 1), 0.08)
+
+	makePart({
+		Name = "Wall_N",
+		Size = Vector3.new(size.X, wallH, t),
+		Position = center + Vector3.new(0, wallH / 2, -size.Z / 2 - t / 2),
+		Color = wallColor,
+		Parent = holder,
+	})
+	makePart({
+		Name = "Wall_S",
+		Size = Vector3.new(size.X, wallH, t),
+		Position = center + Vector3.new(0, wallH / 2, size.Z / 2 + t / 2),
+		Color = wallColor,
+		Parent = holder,
+	})
+	makePart({
+		Name = "Wall_W",
+		Size = Vector3.new(t, wallH, size.Z),
+		Position = center + Vector3.new(-size.X / 2 - t / 2, wallH / 2, 0),
+		Color = wallColor,
+		Parent = holder,
+	})
+	makePart({
+		Name = "Wall_E",
+		Size = Vector3.new(t, wallH, size.Z),
+		Position = center + Vector3.new(size.X / 2 + t / 2, wallH / 2, 0),
+		Color = wallColor,
+		Parent = holder,
+	})
+
+	return holder
+end
+
+-- Дверь-промпт на улице: оранжево-коричневая, с тегом InteriorDoor (будет Prompt).
+local function facadeDoor(position: Vector3, interiorId: string, interiorZone: string, color: Color3?): Part
+	local door = makePart({
+		Name = "Door",
+		Size = Vector3.new(7, 10, 1),
+		Position = position,
+		Color = color or Color3.fromRGB(95, 65, 40),
+		Material = Enum.Material.SmoothPlastic,
+		Transparency = 0.15,
+		CanCollide = false,
+		Parent = propsFolder,
+	})
+	door:SetAttribute("InteriorId", interiorId)
+	door:SetAttribute("InteriorZone", interiorZone)
+	CollectionService:AddTag(door, "InteriorDoor")
+	return door
+end
+
+local function interiorExit(position: Vector3, interiorZone: string): Part
+	local door = makePart({
+		Name = ("Exit_%s"):format(interiorZone),
+		Size = Vector3.new(7, 10, 1),
+		Position = position,
+		Color = Color3.fromRGB(120, 80, 40),
+		Material = Enum.Material.SmoothPlastic,
+		Transparency = 0.15,
+		CanCollide = false,
+		Parent = propsFolder,
+	})
+	door:SetAttribute("InteriorExit", true)
+	door:SetAttribute("InteriorZone", interiorZone)
+	CollectionService:AddTag(door, "InteriorDoor")
+	return door
+end
+
+-- Дверь в интерьере (MoveTo/RequiresInteriorPass/exit): создаёт часть и помечает тегом.
+local function interiorDoor(position: Vector3, color: Color3): Part
+	local door = makePart({
+		Name = "Door",
+		Size = Vector3.new(7, 10, 1),
+		Position = position,
+		Color = color,
+		Material = Enum.Material.SmoothPlastic,
+		Transparency = 0.15,
+		CanCollide = false,
+		Parent = propsFolder,
+	})
+	CollectionService:AddTag(door, "InteriorDoor")
+	return door
+end
+
+local function interiorLight(parent: Instance, position: Vector3, range: number)
+	local holder = makePart({
+		Name = "LightHolder",
+		Size = Vector3.new(1, 1, 1),
+		Position = position,
+		Transparency = 1,
+		CanCollide = false,
+		Parent = parent,
+	})
+	local light = Instance.new("PointLight")
+	light.Name = "InteriorLight"
+	light.Range = range
+	light.Brightness = 1.4
+	light.Color = Color3.fromRGB(255, 235, 190)
+	light.Enabled = true
+	light.Parent = holder
+end
+
+-- Эрмитаж (Зимний дворец) — самый большой интерфейсный интерьер
+do
+	if not interiorsFolder:FindFirstChild("Interior_Hermitage") then
+		local model = Instance.new("Model")
+		model.Name = "Interior_Hermitage"
+		model.Parent = interiorsFolder
+
+		local base = Vector3.new(0, 2000, 5000)
+		local floorColor = Color3.fromRGB(220, 210, 195)
+
+		room(model, "Hall", Vector3.new(90, 26, 90), base + Vector3.new(0, 8, 0), floorColor)
+		room(model, "Throne", Vector3.new(70, 24, 90), base + Vector3.new(0, 26, 96), Color3.fromRGB(225, 215, 190))
+		room(model, "Malachite", Vector3.new(46, 20, 90), base + Vector3.new(68, 26, 96), Color3.fromRGB(120, 200, 160))
+		room(
+			model,
+			"SecretHall",
+			Vector3.new(40, 18, 60),
+			base + Vector3.new(0, 26, -76),
+			Color3.fromRGB(230, 225, 215)
+		)
+
+		-- Лестница из фойе в Тронный зал
+		for i = 0, 6 do
+			local step = makePart({
+				Name = ("Step_%d"):format(i),
+				Size = Vector3.new(4, 1 + i * 2, 10),
+				Position = base + Vector3.new(-14 + i * 4, 0.5 + i * 2, -28 + i * 12),
+				Color = Color3.fromRGB(200, 195, 190),
+				Material = Enum.Material.Marble,
+				Parent = model,
+			})
+			step.CastShadow = true
+		end
+
+		-- Колонны тронного зала
+		for i = -3, 3 do
+			local col = makePart({
+				Name = ("Throne_Column_%d"):format(i + 4),
+				Size = Vector3.new(3, 22, 3),
+				Position = base + Vector3.new(0, 26 + 11, 96 + i * 11),
+				Color = Color3.fromRGB(245, 240, 225),
+				Shape = Enum.PartType.Cylinder,
+				Material = Enum.Material.Marble,
+				Parent = model,
+			})
+			col.Orientation = Vector3.new(0, 0, 90)
+		end
+
+		-- Малахитовый зал: колонны справа
+		for i = -2, 2 do
+			local col = makePart({
+				Name = ("Malachite_Column_%d"):format(i + 3),
+				Size = Vector3.new(4, 18, 4),
+				Position = base + Vector3.new(68 + i * 6, 26 + 9 + 5, 96 + i * 12),
+				Color = Color3.fromRGB(60, 170, 120),
+				Shape = Enum.PartType.Cylinder,
+				Material = Enum.Material.Marble,
+				Parent = model,
+			})
+			col.Orientation = Vector3.new(0, 0, 90)
+		end
+
+		-- Трон
+		makePart({
+			Name = "Throne_Platform",
+			Size = Vector3.new(12, 2, 8),
+			Position = base + Vector3.new(0, 27, 134),
+			Color = Color3.fromRGB(200, 165, 80),
+			Material = Enum.Material.Marble,
+			Parent = model,
+		})
+		makePart({
+			Name = "Throne_Back",
+			Size = Vector3.new(6, 12, 2),
+			Position = base + Vector3.new(0, 33, 137.5),
+			Color = Color3.fromRGB(170, 50, 50),
+			Material = Enum.Material.Fabric,
+			Parent = model,
+		})
+
+		-- Свет (не более 3 на интерьер, из лимита 15–20 на всю зону)
+		interiorLight(model, base + Vector3.new(0, 14, 0), 70)
+		interiorLight(model, base + Vector3.new(0, 32, 96), 60)
+		interiorLight(model, base + Vector3.new(68, 32, 96), 40)
+
+		-- Спавн в фойе
+		local spawn = makePart({
+			Name = "InteriorSpawn",
+			Size = Vector3.new(8, 1, 8),
+			Position = base + Vector3.new(0, 1.5, -28),
+			Transparency = 1,
+			CanCollide = false,
+			Anchored = true,
+			Parent = model,
+		})
+		model.PrimaryPart = spawn
+
+		-- Выход из фойе
+		local exit = interiorExit(base + Vector3.new(0, 6, -41.05), "Interior_Hermitage")
+		exit.Parent = model
+
+		-- Дверь в закрытый зал (латная дверь) с планом пропуска наверху
+		local secretDoor = interiorDoor(base + Vector3.new(10, 35, -58), Color3.fromRGB(180, 60, 60))
+		secretDoor.Name = "HermitageSecretDoor"
+		secretDoor:SetAttribute("MoveTo", "HermitageSecretHallSpawn")
+		secretDoor:SetAttribute("RequiresInteriorPass", true)
+		secretDoor:SetAttribute("InteriorZone", "Interior_Hermitage")
+		secretDoor.Parent = model
+
+		local secretSpawn = makePart({
+			Name = "HermitageSecretHallSpawn",
+			Size = Vector3.new(6, 1, 6),
+			Position = base + Vector3.new(0, 27, -28),
+			Transparency = 1,
+			CanCollide = false,
+			Anchored = true,
+			Parent = model,
+		})
+
+		local backDoor = interiorDoor(base + Vector3.new(-14, 35, -58), Color3.fromRGB(180, 60, 60))
+		backDoor.Name = "HermitageBackDoor"
+		backDoor:SetAttribute("MoveTo", "InteriorSpawn")
+		backDoor:SetAttribute("InteriorZone", "Interior_Hermitage")
+		backDoor.Parent = model
+		_ = secretSpawn
+	end
+end
+
+-- Исаакиевский собор — неф, купол, смотровая площадка на колоннаде
+do
+	if not interiorsFolder:FindFirstChild("Interior_Isaakiy") then
+		local model = Instance.new("Model")
+		model.Name = "Interior_Isaakiy"
+		model.Parent = interiorsFolder
+
+		local base = Vector3.new(500, 2000, 5000)
+		local naveColor = Color3.fromRGB(215, 210, 195)
+
+		room(model, "Nave", Vector3.new(100, 46, 100), base + Vector3.new(0, 22, 0), naveColor)
+
+		-- Купол над нефом
+		makePart({
+			Name = "Dome_Base",
+			Size = Vector3.new(64, 10, 64),
+			Position = base + Vector3.new(0, 46, 0),
+			Color = Color3.fromRGB(190, 170, 120),
+			Material = Enum.Material.Marble,
+			Shape = Enum.PartType.Cylinder,
+			Parent = model,
+		})
+		makePart({
+			Name = "Dome_Sphere",
+			Size = Vector3.new(58, 58, 58),
+			Position = base + Vector3.new(0, 58, 0),
+			Color = Color3.fromRGB(210, 170, 70),
+			Material = Enum.Material.Metal,
+			Shape = Enum.PartType.Ball,
+			Parent = model,
+		})
+
+		-- Колоннада: 6 колонн по периметру
+		for i = 1, 6 do
+			local col = makePart({
+				Name = ("Nave_Column_%d"):format(i),
+				Size = Vector3.new(4, 40, 4),
+				Position = base + Vector3.new(-40 + (i - 1) * 16, 20, 0),
+				Color = Color3.fromRGB(230, 225, 210),
+				Shape = Enum.PartType.Cylinder,
+				Material = Enum.Material.Marble,
+				Parent = model,
+			})
+			col.Orientation = Vector3.new(0, 0, 90)
+		end
+
+		-- Смотровая площадка (ярус над колоннадой) и railing
+		makePart({
+			Name = "Colonnade_Platform",
+			Size = Vector3.new(70, 2, 20),
+			Position = base + Vector3.new(0, 44, -52),
+			Color = Color3.fromRGB(210, 205, 190),
+			Material = Enum.Material.Marble,
+			Parent = model,
+		})
+		makePart({
+			Name = "Colonnade_Railing",
+			Size = Vector3.new(70, 3, 1),
+			Position = base + Vector3.new(0, 45, -61.5),
+			Color = Color3.fromRGB(120, 20, 20),
+			Material = Enum.Material.Metal,
+			Parent = model,
+		})
+
+		-- Свет (два как максимум на здание, п.4.4)
+		interiorLight(model, base + Vector3.new(0, 26, 0), 80)
+		interiorLight(model, base + Vector3.new(0, 48, -50), 40)
+
+		-- Спавн у входа
+		local spawn = makePart({
+			Name = "InteriorSpawn",
+			Size = Vector3.new(8, 1, 8),
+			Position = base + Vector3.new(0, 1.5, -30),
+			Transparency = 1,
+			CanCollide = false,
+			Anchored = true,
+			Parent = model,
+		})
+		model.PrimaryPart = spawn
+
+		-- Выход в неф
+		local exit = interiorExit(base + Vector3.new(0, 6, -49.05), "Interior_Isaakiy")
+		exit.Parent = model
+
+		-- Проход на колоннаду (MoveTo)
+		local navDoor = interiorDoor(base + Vector3.new(0, 45, -38), Color3.fromRGB(120, 80, 40))
+		navDoor.Name = "IsaakiyNaveDoor"
+		navDoor:SetAttribute("MoveTo", "IsaakiyColonnadeStand")
+		navDoor:SetAttribute("InteriorZone", "Interior_Isaakiy")
+		navDoor.Parent = model
+
+		local colonnadeStand = makePart({
+			Name = "IsaakiyColonnadeStand",
+			Size = Vector3.new(6, 0.5, 6),
+			Position = base + Vector3.new(0, 45.5, -52),
+			Transparency = 1,
+			CanCollide = false,
+			Anchored = true,
+			Parent = model,
+		})
+
+		local backDoor = interiorDoor(colonnadeStand.Position + Vector3.new(0, 1, -6), Color3.fromRGB(120, 80, 40))
+		backDoor.Name = "IsaakiyColonnadeDoor"
+		backDoor:SetAttribute("MoveTo", "IsaakiyNaveStand")
+		backDoor:SetAttribute("InteriorZone", "Interior_Isaakiy")
+		backDoor.Parent = model
+
+		local naveStand = makePart({
+			Name = "IsaakiyNaveStand",
+			Size = Vector3.new(6, 0.5, 6),
+			Position = base + Vector3.new(0, 46, -42),
+			Transparency = 1,
+			CanCollide = false,
+			Anchored = true,
+			Parent = model,
+		})
+		_ = naveStand
+	end
+end
+
+-- Спас на Крови — зал со стилизованными мозаиками и апсой
+do
+	if not interiorsFolder:FindFirstChild("Interior_SpasNaKrovi") then
+		local model = Instance.new("Model")
+		model.Name = "Interior_SpasNaKrovi"
+		model.Parent = interiorsFolder
+
+		local base = Vector3.new(1000, 2000, 5000)
+		local floorColor = Color3.fromRGB(210, 200, 180)
+
+		local hall = room(model, "Hall", Vector3.new(70, 22, 90), base + Vector3.new(0, 11, 0), floorColor)
+
+		-- Мозаики: разноцветные панели вдоль боковых стен
+		local mosaicColors = {
+			Color3.fromRGB(180, 40, 40),
+			Color3.fromRGB(40, 100, 180),
+			Color3.fromRGB(60, 140, 90),
+			Color3.fromRGB(200, 165, 60),
+			Color3.fromRGB(120, 60, 160),
+		}
+		for i, color in ipairs(mosaicColors) do
+			makePart({
+				Name = ("Mosaic_%d"):format(i),
+				Size = Vector3.new(12, 14, 1),
+				Position = base + Vector3.new(-28 + (i - 1) * 14, 8, -43.5),
+				Color = color,
+				Material = Enum.Material.Neon,
+				Parent = hall,
+			})
+			makePart({
+				Name = ("MosaicR_%d"):format(i),
+				Size = Vector3.new(12, 14, 1),
+				Position = base + Vector3.new(-28 + (i - 1) * 14, 8, 43.5),
+				Color = color,
+				Material = Enum.Material.Neon,
+				Parent = hall,
+			})
+		end
+
+		-- Колонны по центру
+		for i = -1, 1 do
+			local col = makePart({
+				Name = ("Spas_Column_%d"):format(i + 2),
+				Size = Vector3.new(5, 20, 5),
+				Position = base + Vector3.new(i * 16, 10, 20),
+				Color = Color3.fromRGB(200, 190, 160),
+				Shape = Enum.PartType.Cylinder,
+				Material = Enum.Material.Marble,
+				Parent = hall,
+			})
+			col.Orientation = Vector3.new(0, 0, 90)
+		end
+
+		-- Апсида (округлое завершение зала)
+		makePart({
+			Name = "Apse",
+			Size = Vector3.new(26, 20, 16),
+			Position = base + Vector3.new(0, 10, 48),
+			Color = Color3.fromRGB(230, 215, 170),
+			Material = Enum.Material.Marble,
+			Shape = Enum.PartType.Cylinder,
+			Parent = hall,
+		})
+
+		-- Свет
+		interiorLight(model, base + Vector3.new(0, 14, 0), 70)
+		interiorLight(model, base + Vector3.new(0, 14, 40), 40)
+
+		-- Спавн
+		local spawn = makePart({
+			Name = "InteriorSpawn",
+			Size = Vector3.new(8, 1, 8),
+			Position = base + Vector3.new(0, 1.5, -30),
+			Transparency = 1,
+			CanCollide = false,
+			Anchored = true,
+			Parent = model,
+		})
+		model.PrimaryPart = spawn
+
+		local exit = interiorExit(base + Vector3.new(0, 6, -44.05), "Interior_SpasNaKrovi")
+		exit.Parent = model
+	end
+end
+
+--=== Фасадные двери (входы из улицы в интерьеры) ================================
+facadeDoor(Vector3.new(0, 5, -14.5), "Hermitage", "Interior_Hermitage")
+facadeDoor(Vector3.new(-160, 5, 184.5), "Isaakiy", "Interior_Isaakiy")
+facadeDoor(Vector3.new(760, 5, 24.5), "SpasNaKrovi", "Interior_SpasNaKrovi")
+--================================================================================
+-- Указатели улиц (п.5.1 ТЗ — физические таблички) и плейсхолдеры v2.0 (п.5.4 ТЗ).
+--================================================================================
+
+local function modelPrimaryPart(holder: Model, part: BasePart)
+	holder.PrimaryPart = part
+end
+
+local function streetSign(position: Vector3, text: string, rotationY: number?)
+	local holder = Instance.new("Model")
+	holder.Name = ("StreetSign_%s"):format(text:gsub("%s+", "_"):sub(1, 24))
+	holder.Parent = propsFolder
+
+	makePart({
+		Name = "Pole",
+		Size = Vector3.new(0.4, 8.4, 0.4),
+		Position = position + Vector3.new(0, 4.2, 0),
+		Color = Color3.fromRGB(40, 50, 60),
+		Material = Enum.Material.Metal,
+		Parent = holder,
+	})
+
+	local plate = makePart({
+		Name = "Plate",
+		Size = Vector3.new(6, 1.6, 0.2),
+		Position = position + Vector3.new(0, 6.8, 0),
+		Color = Color3.fromRGB(20, 30, 45),
+		Material = Enum.Material.SmoothPlastic,
+		Parent = holder,
+	})
+	if rotationY then
+		plate.Orientation = Vector3.new(0, rotationY, 0)
+	end
+
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "StreetSignGui"
+	gui.CanvasSize = Vector2.new(240, 64)
+	for i = 1, 2 do
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.fromScale(1, 1)
+		label.BackgroundTransparency = 1
+		label.Text = text
+		label.TextColor3 = Color3.new(1, 1, 1)
+		label.TextScaled = true
+		label.Font = Enum.Font.GothamBold
+		if i == 1 then
+			label.Face = Enum.NormalId.Front
+		else
+			label.Face = Enum.NormalId.Back
+			label.Rotation = 180
+		end
+		label.Parent = gui
+	end
+	gui.Parent = plate
+	modelPrimaryPart(holder, plate)
+end
+
+streetSign(Vector3.new(55, 0, 2), "Невский проспект / Nevsky Prospect", 0)
+streetSign(Vector3.new(245, 0, 2), "Невский проспект / Nevsky Prospect", 0)
+streetSign(Vector3.new(430, 0, 28), "Казанская / Kazansky pereulok", 0)
+streetSign(Vector3.new(0, 0, -28), "Дворцовая площадь / Palace Sq.", 0)
+streetSign(Vector3.new(700, 0, 28), "Канал Грибоедова / Griboedov Canal", -20)
+streetSign(Vector3.new(0, 0, -80), "Набережная Невы / Neva Embankment", 0)
+streetSign(Vector3.new(-160, 0, -450), "Заячий остров / Hare Is.", 0)
+
+-- Плейсхолдеры v2.0: «квартирный квартал» и «магазин» над Невским, tagged House/Shop (п.5.4)
+
+local function placeholderBuilding(name: string, tag: string, position: Vector3, size: Vector3, color: Color3)
+	if buildingsFolder:FindFirstChild(name) then
+		return
+	end
+	local model = Instance.new("Model")
+	model.Name = name
+	model.Parent = buildingsFolder
+	local body = makePart({
+		Name = "Body",
+		Size = size,
+		Position = position + Vector3.new(0, size.Y / 2, 0),
+		Color = color,
+		Material = Enum.Material.Pebble,
+		Parent = model,
+	})
+	CollectionService:AddTag(model, tag)
+	model.PrimaryPart = body
+end
+
+placeholderBuilding(
+	"Building_Nevsky_House_Flat",
+	"House",
+	Vector3.new(260, 0, -45),
+	Vector3.new(46, 32, 24),
+	Color3.fromRGB(210, 185, 160)
+)
+placeholderBuilding(
+	"Shop_Nevsky_Cafe",
+	"Shop",
+	Vector3.new(340, 0, -40),
+	Vector3.new(26, 14, 16),
+	Color3.fromRGB(170, 140, 200)
+)
+placeholderBuilding(
+	"Job_Permit_Office",
+	"Job",
+	Vector3.new(180, 0, 40),
+	Vector3.new(30, 24, 18),
+	Color3.fromRGB(150, 170, 140)
+)
+
+--=== Streaming (п.8.1) ============================================================
+-- Из скриптов включить StreamingEnabled НЕЛЬЗЯ (read-only). Установите вручную в Studio:
+-- Workspace.StreamingEnabled=true; MinRadius=128; TargetRadius=900.
+
+print(
+	"[SPB Landmarks] Готово: интерьеры, фасадные двери, указатели улиц, плейсхолдеры v2.0."
+)

@@ -107,6 +107,8 @@ local function pushZoneState(player: Player)
 	Remotes.FireClient(Remotes.Names.ZoneChanged, player, {
 		Zones = list,
 		Ambient = if zoneDef then zoneDef.Ambient else nil,
+		Music = if zoneDef then zoneDef.Music else nil,
+		Interior = if zoneDef then zoneDef.Interior == true else false,
 	})
 end
 
@@ -225,6 +227,27 @@ function ZoneService.Start()
 		end
 	else
 		warn("[ZoneService] Workspace/Map/Zones не найдена")
+	end
+
+	-- Интерьеры (п.3.1): каждая модель в Workspace/Interiors — тоже зона ZonePlus
+	local interiorsFolder = waitForChild(workspace, "Interiors", CHILD_TIMEOUT)
+	if interiorsFolder then
+		for _, child in ipairs(interiorsFolder:GetChildren()) do
+			local zoneId = getZoneId(child, "")
+			local zoneDef = Landmarks.GetZone(zoneId)
+			if not zoneDef then
+				warn(("[ZoneService] Интерьер %s отсутствует в Landmarks.Zones"):format(zoneId))
+			end
+
+			local entry = createZone(child, "Medium", zoneDef and zoneDef.LandmarkId or nil)
+			if entry then
+				zoneEntries[entry.Id] = entry
+			end
+		end
+	else
+		warn(
+			"[ZoneService] Workspace/Interiors не найдена (этап интерьеров ещё не начат)"
+		)
 	end
 
 	local photoSpots = waitForChild(workspace, "PhotoSpots", CHILD_TIMEOUT)

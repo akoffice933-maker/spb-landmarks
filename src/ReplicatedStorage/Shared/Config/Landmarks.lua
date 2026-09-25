@@ -35,11 +35,26 @@ export type Zone = {
 	Id: string,
 	DisplayName: string,
 	LandmarkId: string?,
+	Interior: boolean?,
 	Ambient: {
 		SoundId: string,
 		Volume: number,
 		DisplayName: string,
 	},
+	-- Если задано — музыка интерьера (п.12.3): играет на Music SoundGroup
+	-- с настройкой MusicVolume и «перекрывает» уличный эмбиент.
+	Music: {
+		SoundId: string,
+		Volume: number,
+		DisplayName: string,
+	}?,
+}
+
+export type Interior = {
+	Id: string,
+	DisplayName: string,
+	EntryLandmarkId: string, -- здание, у которого стоит входная дверь
+	ZoneId: string, -- имя модели в Workspace/Interiors (она же зона)
 }
 
 export type SpawnDef = {
@@ -322,6 +337,56 @@ local Zones: { [string]: Zone } = {
 		LandmarkId = "MednyyVsadnik",
 		Ambient = { SoundId = PLACEHOLDER_SOUND, Volume = 0.3, DisplayName = "Ветер и вода" },
 	},
+
+	-- Интерьеры (п.3.1): модели в Workspace/Interiors, музыка вместо эмбиента
+	Interior_Hermitage = {
+		Id = "Interior_Hermitage",
+		DisplayName = "Интерьер: Зимний дворец",
+		LandmarkId = "Hermitage",
+		Interior = true,
+		Ambient = { SoundId = PLACEHOLDER_SOUND, Volume = 0.2, DisplayName = "Тихий зал" },
+		Music = { SoundId = PLACEHOLDER_SOUND, Volume = 0.45, DisplayName = "Музейная подложка" },
+	},
+	Interior_Isaakiy = {
+		Id = "Interior_Isaakiy",
+		DisplayName = "Интерьер: Исаакиевский собор",
+		LandmarkId = "Isaakiy",
+		Interior = true,
+		Ambient = { SoundId = PLACEHOLDER_SOUND, Volume = 0.2, DisplayName = "Соборное эхо" },
+		Music = { SoundId = PLACEHOLDER_SOUND, Volume = 0.45, DisplayName = "Органный фон" },
+	},
+	Interior_SpasNaKrovi = {
+		Id = "Interior_SpasNaKrovi",
+		DisplayName = "Интерьер: Спас на Крови",
+		LandmarkId = "SpasNaKrovi",
+		Interior = true,
+		Ambient = { SoundId = PLACEHOLDER_SOUND, Volume = 0.25, DisplayName = "Звон и свечи" },
+		Music = { SoundId = PLACEHOLDER_SOUND, Volume = 0.45, DisplayName = "Хоровая подложка" },
+	},
+}
+
+--[[ Реестр интерьеров. Id используется атрибутами дверей (InteriorId),
+ EntryLandmarkId — здание, к которому привязана входная точка.
+ Модель интерьера — Workspace/Interiors/<ZoneId> (зона ZonePlus). ]]
+local Interiors: { [string]: Interior } = {
+	Hermitage = {
+		Id = "Hermitage",
+		DisplayName = "Парадные залы Зимнего дворца",
+		EntryLandmarkId = "Hermitage",
+		ZoneId = "Interior_Hermitage",
+	},
+	Isaakiy = {
+		Id = "Isaakiy",
+		DisplayName = "Центральный неф Исаакиевского собора",
+		EntryLandmarkId = "Isaakiy",
+		ZoneId = "Interior_Isaakiy",
+	},
+	SpasNaKrovi = {
+		Id = "SpasNaKrovi",
+		DisplayName = "Зал Спаса на Крови",
+		EntryLandmarkId = "SpasNaKrovi",
+		ZoneId = "Interior_SpasNaKrovi",
+	},
 }
 
 --[[ Точки спавна (п.5.1): игрок выбирает одну из трёх при входе.
@@ -412,6 +477,7 @@ local SETTINGS: { [string]: SettingDef } = {
 local LandmarksModule = {
 	Landmarks = Landmarks,
 	Zones = Zones,
+	Interiors = Interiors,
 	Spawns = Spawns,
 	SpawnOrder = SPAWN_ORDER,
 	InfoBoards = InfoBoards,
@@ -425,6 +491,10 @@ end
 
 function LandmarksModule.GetZone(id: string): Zone?
 	return Zones[id]
+end
+
+function LandmarksModule.GetInterior(id: string): Interior?
+	return Interiors[id]
 end
 
 function LandmarksModule.GetSpawn(id: string): SpawnDef?

@@ -1,12 +1,12 @@
 --!strict
 --[[
 	ZoneClient.lua — клиентская реакция на смену зоны (п.12.3 ТЗ):
-	  * показывает название зоны и эмбиент в HUD;
-	  * переключает эмбиент-звук с плавным кроссфейдом;
-	  * громкость эмбиента — из настроек профиля (AmbientVolume).
-
-	Все звуки — через SoundGroups: создаём свою группу "Ambient", чтобы
-	громкость управлялась централизовано и не смешивалась с музыкой/эффектами.
+	  * показывает название зоны и звуковой контекст в HUD;
+	  * эмбиент по зоне (город/вода/чайки) — SoundGroup "Ambient";
+	  * МУЗЫКА В ИНТЕРЬЕРАХ — SoundGroup "Music" (п.12.3), кроссфейдом,
+	    с приоритетом над эмбиентом;
+	  * громкость каждой группы — отдельно, из настроек профиля
+	    (AmbientVolume / MusicVolume, п.5.2).
 ]]
 
 local Players = game:GetService("Players")
@@ -28,72 +28,126 @@ local FADE_OUT = 1.5
 
 local ZoneClient = {}
 
-local soundGroup: SoundGroup? = nil
-local currentSound: Sound? = nil
-local currentAmbientVolume = 1
+type Channel = {
+	Group: SoundGroup?,
+	Sound: Sound?,
+	Multiplier: number,
+	FadeIn: number,
+	FadeOut: number,
+}
 
-local function ensureSoundGroup(): SoundGroup
-	if soundGroup then
-		return soundGroup
-	end
+local channels: { [string]: Channel } = {
+	Ambient = { Group = nil, Sound = nil, Multiplier = 1, FadeIn = FADE_IN, FadeOut = FADE_OUT },
+	Music = { Group = nil, Sound = nil, Multiplier = 0.7, FadeIn = 3.5, FadeOut = 2 },
+}
 
-	local existing = SoundService:FindFirstChild("Ambient")
+--=== SoundGroups ================================================================
+
+local function ensureGroup(name: string): SoundGroup
+	local existing = SoundService:FindFirstChild(name)
 	if existing and existing:IsA("SoundGroup") then
-		soundGroup = existing
 		return existing
 	end
 
 	local created = Instance.new("SoundGroup")
-	created.Name = "Ambient"
+	created.Name = name
 	created.Volume = 1
 	created.Parent = SoundService
-
-	soundGroup = created
 	return created
 end
 
-local function stopCurrentSound()
-	if not currentSound then
+local function channelGroup(channelName: string): SoundGroup
+	local channel = channels[channelName]
+	if not channel.Group then
+		local group = ensureGroup(channelName)
+		group.Volume = channel.Multiplier
+		channel.Group = group
+	end
+	return channel.Group :: SoundGroup
+end
+
+--=== Управление треками =========================================================
+
+local function stopChannel(channelName: string)
+	local channel = channels[channelName]
+	if not channel.Sound then
 		return
 	end
 
-	local old = currentSound
-	currentSound = nil
+	local old = channel.Sound
+	channel.Sound = nil
 
-	local fadeOut = TweenService:Create(old, TweenInfo.new(FADE_OUT), { Volume = 0 })
-	fadeOut:Play()
-	fadeOut.Completed:Once(function()
+	local fade = TweenService:Create(old, TweenInfo.new(channel.FadeOut), { Volume = 0 })
+	fade:Play()
+	fade.Completed:Once(function()
 		old:Destroy()
 	end)
 end
 
-local function playAmbient(ambient: any)
-	if not ambient or ambient.SoundId == "rbxassetid://0" or ambient.SoundId == "" then
-		stopCurrentSound()
+local function playOnChannel(channelName: string, def: any)
+	local channel = channels[channelName]
+
+	-- Тот же трек уже играет
+	if channel.Sound and channel.Sound.SoundId == def.SoundId then
 		return
 	end
 
-	-- Тот же трек уже играет — ничего не перезапускаем
-	if currentSound and currentSound.SoundId == ambient.SoundId then
+	stopChannel(channelName)
+
+	if not def or def.SoundId == "" or def.SoundId == "rbxassetid://0" then
 		return
 	end
 
-	stopCurrentSound()
-
-	local group = ensureSoundGroup()
 	local sound = Instance.new("Sound")
-	sound.Name = ("Ambient_%s"):format(ambient.SoundId:gsub("%D", ""):sub(-6))
-	sound.SoundId = ambient.SoundId
+	sound.Name = ("%s_%s"):format(channelName, def.SoundId:gsub("%D", ""):sub(-6))
+	sound.SoundId = def.SoundId
 	sound.Looped = true
 	sound.Volume = 0
-	sound.SoundGroup = group
+	sound.SoundGroup = channelGroup(channelName)
 	sound.Parent = player:WaitForChild("PlayerGui")
 	sound:Play()
 
-	currentSound = sound
+	channel.Sound = sound
 
-	local targetVolume = (ambient.Volume or 0.3) * currentAmbientVolume
-	TweenService:Create(sound, TweenInfo.new(FADE_IN), { Volume = targetVolume }):Play()
+	local targetVolume = def.Volume or 0.3
+	TweenService:Create(sound, TweenInfo.new(channel.FadeIn), { Volume = targetVolume }):Play()
+end
+
+--=== Применение настроек ========================================================
+
+local function applyVolumeSettings()
+	for _, entry in ipairs({
+		{ Name = "Ambient", Key = "AmbientVolume", Fallback = 1 },
+		{ Name = "Music", Key = "MusicVolume", Fallback = 0.7 },
+	}) do
+		local channel = channels[entry.Name]
+		channel.Multiplier = DataClient.GetSetting(entry.Key, entry.Fallback)
+		local group = channelGroup(entry.Name)
+		group.Volume = channel.Multiplier
+	end
+end
+
+--=== Логика выбора звука ========================================================
+
+--[[ Берём первую зону с музыкой (интерьер); если её нет — первую с эмбиентом.
+	Музыка приоритетнее эмбиента (п.12.3: в интерьере музыка, на улице звуки). ]]
+local function pickSoundContext(zones: { string }): (any?, any?)
+	local musicDef = nil
+	local ambientDef = nil
+
+	for _, zoneId in ipairs(zones) do
+		local zoneDef = Landmarks.GetZone(zoneId)
+		if zoneDef then
+			if not musicDef and zoneDef.Music then
+				musicDef = zoneDef.Music
+			end
+			if not ambientDef and zoneDef.Ambient then
+				ambientDef = zoneDef.Ambient
+			end
+		end
+	end
+
+	return musicDef, ambientDef
 end
 
 local function onZoneChanged(payload: any)
@@ -110,26 +164,28 @@ local function onZoneChanged(payload: any)
 		end
 	end
 
-	HUDUI.SetZone(if zoneDef then zoneDef.DisplayName else "", payload.Ambient or (zoneDef and zoneDef.Ambient))
-	playAmbient(payload.Ambient or (zoneDef and zoneDef.Ambient))
-end
+	local musicDef, ambientDef = pickSoundContext(zones)
 
-local function applyVolumeSetting()
-	currentAmbientVolume = DataClient.GetSetting("AmbientVolume", 1)
+	if musicDef then
+		playOnChannel("Music", musicDef)
+		stopChannel("Ambient")
+	else
+		stopChannel("Music")
+		playOnChannel("Ambient", ambientDef)
+	end
 
-	local group = ensureSoundGroup()
-	group.Volume = currentAmbientVolume
+	-- HUD показывает активный контекст (музыка важнее)
+	local shownDef = musicDef or ambientDef
+	HUDUI.SetZone(if zoneDef then zoneDef.DisplayName else "", shownDef)
 end
 
 function ZoneClient.Start()
 	Remotes.OnClientEvent(Remotes.Names.ZoneChanged, onZoneChanged)
 
-	DataClient.ProfileChanged:Connect(applyVolumeSetting)
-	DataClient.ProfileChanged:Once(function()
-		applyVolumeSetting()
-	end)
+	DataClient.ProfileChanged:Connect(applyVolumeSettings)
+	DataClient.ProfileChanged:Once(applyVolumeSettings)
 
-	applyVolumeSetting()
+	applyVolumeSettings()
 end
 
 return ZoneClient

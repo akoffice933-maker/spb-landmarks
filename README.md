@@ -50,7 +50,9 @@ DataStore; без него всё работает на `ProfileStore.Mock` (с�
 | Профили игроков | `ServerScriptService/Data/*` | ProfileStore (+ Mock в Studio) |
 | Монетизация | `ServerScriptService/Monetization/*` | Game Pass кэш, ProcessReceipt идемпотентно |
 | Зоны / Photo Spots | `ServerScriptService/Zones`, `Interaction/PhotoSpotService` | ZonePlus, серверная валидация |
+| Интерьеры | `Interaction/InteriorService` + блокаут 3 залов | Входы бесплатны; закрытый зал за «Интерьерным пропуском» |
 | Инфо-таблички | `Interaction/InfoService` | Базовый текст всем, расширенный с «Гидом» |
+| Указатели улиц | BootstrapProject.server.lua | Физические таблички над улицами (п.5.1) |
 | День/ночь | `Lighting/LightingController` | 4 пресета + цикл 25 мин + фонари авто |
 | Спавны / телепорты | `Spawn/SpawnService` | Выбор спавна + платный FastTravel |
 | Онбординг | `UI/OnboardingUI` | 4 слайда, один раз |
