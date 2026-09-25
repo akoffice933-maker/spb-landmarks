@@ -22,8 +22,12 @@ local Validate = require(Shared.Util.Validate)
 local AvatarPresets = require(Shared.Config.AvatarPresets)
 
 local MonetizationController = require(script.Parent.Parent.Monetization.MonetizationController)
+local PlayerDataService = require(script.Parent.Parent.Data.PlayerDataService)
 
 local REQUEST_COOLDOWN = 1.0
+
+-- Настройка профиля, где хранится выбранный наряд (v2.1)
+local OUTFIT_SETTING = "WardrobeOutfit"
 
 local AvatarStudioService = {}
 
@@ -182,6 +186,9 @@ local function onRequestWardrobe(player: Player, payload: any)
 	end
 
 	AvatarStudioService.ApplyOutfit(player, outfit)
+	-- v2.1: запоминаем выбор — при следующем заходе/респауне восстановим.
+	-- SetSetting прогоняет валидатор (для RequirementsFeature), его отказ безопасен.
+	PlayerDataService.SetSetting(player, OUTFIT_SETTING, outfit.Id)
 	notify(player, ("Гардероб: %s — %s"):format(outfit.Name, outfit.Desc), "success")
 end
 
@@ -216,13 +223,49 @@ local function onPlayerRemoving(player: Player)
 	activePoseByPlayer[player] = nil
 end
 
+-- v2.1: восстановить сохранённый наряд (аватар Roblox возвращается дефолтным
+-- на каждом спауне). Пасс могли отозвать → молча пропускаем, тосты не спамим.
+local function applySavedOutfit(player: Player)
+	local data = PlayerDataService.GetData(player)
+	local settings = if data then (data :: any).Settings else nil
+	local id = if type(settings) == "table" then (settings :: any)[OUTFIT_SETTING] else nil
+	if type(id) ~= "string" or id == "None" then
+		return
+	end
+	local outfit = AvatarPresets.GetOutfitById(id)
+	if not outfit then
+		return
+	end
+	if outfit.RequiresFeature and not MonetizationController.HasFeature(player, outfit.RequiresFeature) then
+		return
+	end
+	AvatarStudioService.ApplyOutfit(player, outfit)
+end
+
 local function onCharacterAdded(player: Player, character: Model)
 	-- Новый спаун: кэш/поза недействительны, персонаж отребликается
 	baseC0ByCharacter[character] = nil
 	activePoseByPlayer[player] = nil
+	applySavedOutfit(player)
 end
 
 function AvatarStudioService.Start()
+	-- Валидатор настройки: пишется только через UpdateSettings/RequestWardrobe;
+	-- проверяет существование пресета и владение пассом для RequiresFeature.
+	PlayerDataService.RegisterSettingValidator(OUTFIT_SETTING, function(player: Player, value: any): boolean
+		if value == "None" then
+			return true
+		end
+		local outfit = AvatarPresets.GetOutfitById(value)
+		if not outfit then
+			return false
+		end
+		if outfit.RequiresFeature then
+			return MonetizationController.HasFeature(player, outfit.RequiresFeature)
+		end
+		return true
+	end)
+
 	Remotes.OnServerEvent(Remotes.Names.RequestWardrobe, onRequestWardrobe)
 	Remotes.OnServerEvent(Remotes.Names.RequestPose, onRequestPose)
 	Players.PlayerRemoving:Connect(onPlayerRemoving)
@@ -236,6 +279,13 @@ function AvatarStudioService.Start()
 			onCharacterAdded(player, character)
 		end)
 	end
+	-- Уже заспавненные (Studio, hot reload): дата-готовность может быть позже —
+	-- бережно стартуем через профиль.
+	PlayerDataService.ProfileReady:Connect(function(player)
+		if player.Character then
+			applySavedOutfit(player)
+		end
+	end)
 end
 
 return AvatarStudioService

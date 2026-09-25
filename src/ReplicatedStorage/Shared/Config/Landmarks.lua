@@ -483,6 +483,12 @@ local SETTINGS: { [string]: SettingDef } = {
 		Default = false,
 		DisplayName = "Эффекты белых ночей (пасс «Костюмы эпохи»)",
 	},
+	WardrobeOutfit = {
+		Type = "string",
+		Default = "None",
+		MaxLength = 40,
+		DisplayName = "Сохранённый наряд аватара (v2.1)",
+	},
 	OnboardingCompleted = { Type = "boolean", Default = false, DisplayName = "Онбординг пройден" },
 }
 

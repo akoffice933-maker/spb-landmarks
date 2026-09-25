@@ -21,6 +21,7 @@ local ProfileTemplate = {
 		AmbientVolume = 1,
 		UIVolume = 0.8,
 		EraEffectsOn = false,
+		WardrobeOutfit = "None",
 		OnboardingCompleted = false,
 	},
 
