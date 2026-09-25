@@ -516,7 +516,7 @@ for index, position in TREE_SPOTS do
 end
 
 --================================================================================
--- АРТ-ПРОХОД 2 (v3): архитектурные доминанты — художник здесь агент, а не человек.
+-- ХУДОЖЕСТВЕННЫЙ ПРОХОД (v3): архитектурные доминанты — художник здесь агент.
 -- Ступенчатые фронтоны (сборные прямоугольники вместо сложных призм), луковки,
 -- жилые корпуса, Адмиралтейство со шпилем. Всё так же: ноль источников света.
 --================================================================================
@@ -909,6 +909,221 @@ do
 	end
 end
 
+--================================================================================
+-- ХУДОЖЕСТВЕННЫЙ ПРОХОД (v4): живопись — разводной пролёт, львы, крылья квадриги,
+-- разметка Невского, ограда Летнего сада. Света по-прежнему 0 новых.
+--================================================================================
+
+-- Дворцовый мост: разводной пролёт между опорами (z −448..−502)
+do
+	if propsFolder:FindFirstChild("DvortsovyBridge") and not propsFolder:FindFirstChild("DvortsovyBridge_Deck_A") then
+		-- Сносим цельную палубу, перила и пилон в разрезе
+		for _, name in
+			{
+				"DvortsovyBridge",
+				"DvortsovyBridge_Rail_-139.5",
+				"DvortsovyBridge_Rail_-120.5",
+				"DvortsovyBridge_Pylon_-450_-137",
+				"DvortsovyBridge_Pylon_-450_-123",
+			}
+		do
+			local part = propsFolder:FindFirstChild(name)
+			if part then
+				part:Destroy()
+			end
+		end
+
+		local STONE = Color3.fromRGB(185, 178, 165)
+		local RAIL = Color3.fromRGB(120, 125, 130)
+		-- Береговые пролёты: южный z −150..−448, островной z −502..−600
+		for _, spec in { { "A", -150, -448 }, { "B", -502, -600 } } do
+			local z1, z2 = spec[2], spec[3]
+			local lenZ = z2 - z1
+			makePart({
+				Name = ("DvortsovyBridge_Deck_%s"):format(spec[1]),
+				Size = Vector3.new(18, 2, lenZ),
+				Position = Vector3.new(-130, 1.5, (z1 + z2) / 2),
+				Color = STONE,
+				Material = Enum.Material.Concrete,
+				Parent = propsFolder,
+			})
+			for _, x in { -139.5, -120.5 } do
+				makePart({
+					Name = ("DvortsovyBridge_Rail_%s_%d"):format(spec[1], x),
+					Size = Vector3.new(1.5, 2.4, lenZ),
+					Position = Vector3.new(x, 3.4, (z1 + z2) / 2),
+					Color = RAIL,
+					Material = Enum.Material.Metal,
+					Parent = propsFolder,
+				})
+			end
+		end
+
+		-- Поднятые крылья: крепятся у разрезов и уходят вверх к середине
+		for _, leaf in { { "A", -460, 30 }, { "B", -490, -30 } } do
+			local wing = makePart({
+				Name = ("DvortsovyBridge_Leaf_%s"):format(leaf[1]),
+				Size = Vector3.new(16, 1, 28),
+				Position = Vector3.new(-130, 9.6, leaf[2]),
+				Color = STONE,
+				Material = Enum.Material.Concrete,
+				Parent = propsFolder,
+			})
+			wing.Orientation = Vector3.new(leaf[3], 0, 0)
+			-- Красная сигнальная полоса у верхней кромки крыла
+			makePart({
+				Name = ("DvortsovyBridge_LeafStripe_%s"):format(leaf[1]),
+				Size = Vector3.new(16.2, 0.3, 2.2),
+				Position = Vector3.new(-130, 24.5, leaf[2] + (if leaf[3] > 0 then -11 else 11)),
+				Color = Color3.fromRGB(190, 70, 60),
+				CanCollide = false,
+				Parent = propsFolder,
+			})
+		end
+	end
+end
+
+-- Квадрига Славы: достраиваем «упряжку» — 4 лошadi и развёрнутые крылья
+do
+	if not propsFolder:FindFirstChild("Staff_CharHorse_1") then
+		-- 4 конные фигуры перед колесницей (грудь к площади, z=116)
+		for i = 1, 4 do
+			makePart({
+				Name = ("Staff_CharHorse_%d"):format(i),
+				Size = Vector3.new(2.2, 2.6, 2.2),
+				Position = Vector3.new(-4.2 + (i - 1) * 2.8, 41, 116),
+				Color = GOLD,
+				Material = Enum.Material.Metal,
+				Shape = Enum.PartType.Ball,
+				Parent = propsFolder,
+			})
+		end
+		-- Крылья богини: два развёрнутых полотна
+		for _, wing in { { 117.4, 24 }, { 122.6, -24 } } do
+			local w = makePart({
+				Name = ("Staff_CharWing_%d"):format(wing[1] * 10),
+				Size = Vector3.new(11, 1.6, 0.8),
+				Position = Vector3.new(0, 43.6, wing[1]),
+				Color = GOLD,
+				Material = Enum.Material.Metal,
+				Parent = propsFolder,
+			})
+			w.Orientation = Vector3.new(wing[2], 0, 0)
+		end
+	end
+end
+
+-- Львы у спусков к Неве: пары по обеим сторонам двух лестниц
+do
+	if not propsFolder:FindFirstChild("Naberezhnaya_Lion_1_Ped") then
+		local lionSpots = {
+			-- Спуск у Дворцового моста (центр x=0) и напротив Дворцовой (x=-260)
+			{ 1, 10 },
+			{ 2, -10 },
+			{ 3, -250 },
+			{ 4, -270 },
+		}
+		for _, lion in lionSpots do
+			local x = lion[2]
+			makePart({
+				Name = ("Naberezhnaya_Lion_%d_Ped"):format(lion[1]),
+				Size = Vector3.new(3.4, 1.1, 4.2),
+				Position = Vector3.new(x, 0.55, -357.5),
+				Color = GRANITE,
+				Material = Enum.Material.Pebble,
+				Parent = propsFolder,
+			})
+			makePart({
+				Name = ("Naberezhnaya_Lion_%d_Body"):format(lion[1]),
+				Size = Vector3.new(1.7, 1.3, 3.4),
+				Position = Vector3.new(x, 1.85, -357.3),
+				Color = Color3.fromRGB(85, 72, 55),
+				Material = Enum.Material.Metal,
+				Parent = propsFolder,
+			})
+			makePart({
+				Name = ("Naberezhnaya_Lion_%d_Head"):format(lion[1]),
+				Size = Vector3.new(1.5, 1.5, 1.5),
+				Position = Vector3.new(x, 3, -355.6),
+				Color = Color3.fromRGB(95, 82, 62),
+				Material = Enum.Material.Metal,
+				Shape = Enum.PartType.Ball,
+				Parent = propsFolder,
+			})
+		end
+	end
+end
+
+-- Невский: осевой прерывистый ряд разметки
+do
+	if not propsFolder:FindFirstChild("Nevsky_Dash_00") then
+		for i = 0, 41 do
+			makePart({
+				Name = ("Nevsky_Dash_%02d"):format(i),
+				Size = Vector3.new(6, 0.07, 0.7),
+				Position = Vector3.new(158 + i * 13, 0.31, 10),
+				Color = Color3.fromRGB(224, 224, 214),
+				Material = Enum.Material.SmoothPlastic,
+				CanCollide = false,
+				Parent = propsFolder,
+			})
+		end
+	end
+end
+
+-- Авансцена Летнего сада: газон + балочная ограда золотого цвета + деревья
+do
+	if not propsFolder:FindFirstChild("Letnyi_Lawn") then
+		makePart({
+			Name = "Letnyi_Lawn",
+			Size = Vector3.new(26, 0.3, 128),
+			Position = Vector3.new(814, 0.15, 45),
+			Color = Color3.fromRGB(80, 130, 70),
+			Material = Enum.Material.Grass,
+			Parent = propsFolder,
+		})
+		-- Ограда вдоль западной стороны (x=800): столбики + два прогона
+		for i = 0, 13 do
+			makePart({
+				Name = ("Letnyi_FencePost_%02d"):format(i),
+				Size = Vector3.new(0.5, 2.6, 0.5),
+				Position = Vector3.new(800.5, 1.3, -18 + i * 10),
+				Color = GOLD,
+				Material = Enum.Material.Metal,
+				Parent = propsFolder,
+			})
+		end
+		for _, spec in { { "L", 1.05 }, { "H", 2.1 } } do
+			makePart({
+				Name = ("Letnyi_FenceRail_%s"):format(spec[1]),
+				Size = Vector3.new(0.4, 0.25, 126),
+				Position = Vector3.new(800.5, spec[2], 45.5),
+				Color = DARK,
+				Material = Enum.Material.Metal,
+				Parent = propsFolder,
+			})
+		end
+		-- Три дерева в саду
+		for i, spec in { { 808, -5 }, { 820, 40 }, { 809, 95 } } do
+			makePart({
+				Name = ("Letnyi_TreeTrunk_%d"):format(i),
+				Size = Vector3.new(1.2, 5, 1.2),
+				Position = Vector3.new(spec[1], 2.5 + 0.3, spec[2]),
+				Color = Color3.fromRGB(110, 80, 55),
+				Parent = propsFolder,
+			})
+			makePart({
+				Name = ("Letnyi_TreeCrown_%d"):format(i),
+				Size = Vector3.new(6, 6, 6),
+				Position = Vector3.new(spec[1], 7.5, spec[2]),
+				Color = Color3.fromRGB(70, 120, 60),
+				Shape = Enum.PartType.Ball,
+				Parent = propsFolder,
+			})
+		end
+	end
+end
+
 print(
-	"[SPB Landmarks] Арт-проход v3: Адмиралтейство, крылья дворца, арка Казанского, дома Невского, луковки, фронтоны."
+	"[SPB Landmarks] Арт-проход v4: разводной пролёт, львы у спусков, крылья квадриги, разметка, ограда Летнего сада."
 )
