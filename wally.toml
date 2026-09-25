@@ -1,0 +1,20 @@
+[package]
+name = "spb-landmarks/saint-petersburg"
+description = "Saint Petersburg Landmarks — атмосферная карта для прогулок, фото и Research (v1.0)"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+authors = ["spb-landmarks"]
+include = ["src", "default.project.json", "wally.toml", "README.md"]
+
+[dependencies]
+Promise = "evaera/promise@4.0.0"
+Trove = "sleitnick/trove@1.8.0"
+TopbarPlus = "1foreverhd/topbarplus@3.4.0"
+
+[server-dependencies]
+ProfileStore = "lm-loleris/profilestore@1.0.3"
+
+[place]
+shared-packages = "game.ReplicatedStorage.Packages"
+server-packages = "game.ServerScriptService.Packages"

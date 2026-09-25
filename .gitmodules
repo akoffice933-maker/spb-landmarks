@@ -1,0 +1,4 @@
+[submodule "vendor/ZonePlus"]
+	path = vendor/ZonePlus
+	url = https://github.com/1ForeverHD/ZonePlus
+	branch = main

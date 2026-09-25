@@ -1,0 +1,15 @@
+# Инструменты
+.rokit/
+*.rbxm
+*.rbxmx
+build/
+
+# Зависимости, которые ставит Wally (переустанавливаются через `wally install`)
+Packages/
+ServerPackages/
+DevPackages/
+
+# Прочее
+.DS_Store
+.idea/
+.vscode/

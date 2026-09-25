@@ -1,0 +1,34 @@
+{
+	"name": "spb-landmarks",
+	"tree": {
+		"$className": "DataModel",
+
+		"ReplicatedStorage": {
+			"$path": "src/ReplicatedStorage",
+
+			"Packages": {
+				"$path": "Packages",
+
+				"Zone": {
+					"$path": "vendor/ZonePlus/src/Zone"
+				}
+			}
+		},
+
+		"ServerScriptService": {
+			"$path": "src/ServerScriptService",
+
+			"Packages": {
+				"$path": "ServerPackages"
+			}
+		},
+
+		"StarterPlayer": {
+			"$className": "StarterPlayer",
+
+			"StarterPlayerScripts": {
+				"$path": "src/StarterPlayerScripts"
+			}
+		}
+	}
+}
