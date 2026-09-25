@@ -162,9 +162,14 @@ Workspace
 ## Проверка качества
 
 ```bash
-stylua src        # форматирование (config: stylua.toml)
-selene src        # линтер (config: selene.toml)
+stylua src                       # форматирование (config: stylua.toml)
+selene src                       # линтер (config: selene.toml)
+python3 tools/check_integrity.py # статическая целостность: remotes, require, id, конфиги
 ```
+
+Перед пушем обязательны все три прогона (check_integrity — после любых правок
+конфигов/remote-имён/require-путей; падает с exit=1 при ошибках, =2 при только
+предупреждениях).
 
 Приёмочный чек-лист — `VERIFICATION.md` (п.10 ТЗ): функциональные и
 технические проверки с командами для Command Bar. Перед релизом пройдите
