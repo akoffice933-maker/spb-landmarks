@@ -515,6 +515,400 @@ for index, position in TREE_SPOTS do
 	})
 end
 
+--================================================================================
+-- АРТ-ПРОХОД 2 (v3): архитектурные доминанты — художник здесь агент, а не человек.
+-- Ступенчатые фронтоны (сборные прямоугольники вместо сложных призм), луковки,
+-- жилые корпуса, Адмиралтейство со шпилем. Всё так же: ноль источников света.
+--================================================================================
+
+local BRICK = Color3.fromRGB(160, 90, 70)
+
+-- Ступенчатый фронтон: 3 убывающих яруса — читается как античный треугольник.
+local function steppedPediment(
+	parent: Instance,
+	name: string,
+	center: Vector3,
+	width: number,
+	baseY: number,
+	depth: number
+)
+	local tiers = {
+		{ width, 2.6 },
+		{ width * 0.62, 2.0 },
+		{ width * 0.34, 1.6 },
+	}
+	local y = baseY
+	for index, tier in tiers do
+		makePart({
+			Name = ("%s_T%d"):format(name, index),
+			Size = Vector3.new(tier[1], tier[2], depth),
+			Position = Vector3.new(center.X, y + tier[2] / 2, center.Z),
+			Color = WHITE,
+			Material = Enum.Material.Marble,
+			Parent = parent,
+		})
+		y += tier[2]
+	end
+end
+
+-- Адмиралтейство: главный корпус + знаменитый золотой шпиль с «корабликом»
+do
+	if not buildingsFolder:FindFirstChild("Building_Admiralteistvo") then
+		local model = Instance.new("Model")
+		model.Name = "Building_Admiralteistvo"
+		model.Parent = buildingsFolder
+
+		makePart({
+			Name = "Admiralty_Block",
+			Size = Vector3.new(70, 16, 40),
+			Position = Vector3.new(-250, 8, 60),
+			Color = Color3.fromRGB(215, 195, 130),
+			Material = Enum.Material.Pebble,
+			Parent = model,
+		})
+		makePart({
+			Name = "Admiralty_Tower",
+			Size = Vector3.new(18, 10, 18),
+			Position = Vector3.new(-250, 21, 60),
+			Color = Color3.fromRGB(215, 195, 130),
+			Parent = model,
+		})
+		-- Ярусы шпиля: драма → башенка → игла → кораблик
+		local drum = makePart({
+			Name = "Admiralty_Drum",
+			Size = Vector3.new(10, 8, 10),
+			Position = Vector3.new(-250, 30, 60),
+			Color = WHITE,
+			Shape = Enum.PartType.Cylinder,
+			Parent = model,
+		})
+		drum.Orientation = Vector3.new(0, 0, 90)
+		makePart({
+			Name = "Admiralty_SpireBase",
+			Size = Vector3.new(6, 12, 6),
+			Position = Vector3.new(-250, 40, 60),
+			Color = GOLD,
+			Material = Enum.Material.Metal,
+			Parent = model,
+		})
+		makePart({
+			Name = "Admiralty_Spire",
+			Size = Vector3.new(2, 24, 2),
+			Position = Vector3.new(-250, 58, 60),
+			Color = GOLD,
+			Material = Enum.Material.Metal,
+			Parent = model,
+		})
+		makePart({
+			Name = "Admiralty_Ship",
+			Size = Vector3.new(1.6, 1.6, 1.6),
+			Position = Vector3.new(-250, 71.5, 60),
+			Color = Color3.fromRGB(255, 225, 130),
+			Material = Enum.Material.Neon,
+			Shape = Enum.PartType.Ball,
+			Parent = model,
+		})
+		model.PrimaryPart = model:FindFirstChild("Admiralty_Block") :: BasePart
+	end
+end
+
+-- Эрмитаж: боковые крылья к площади + парадный портал у двери интерьера
+do
+	local model = getBuilding("Building_Hermitage")
+	if model and not model:FindFirstChild("Hermitage_Wing_W") then
+		for _, side in { { "W", -113 }, { "E", 113 } } do
+			makePart({
+				Name = ("Hermitage_Wing_%s"):format(side[1]),
+				Size = Vector3.new(40, 30, 30),
+				Position = Vector3.new(side[2], 15, -10),
+				Color = Color3.fromRGB(150, 170, 155),
+				Material = Enum.Material.Pebble,
+				Parent = model,
+			})
+		end
+
+		-- Портал: два пилона и ступенчатый фронтон над входом в интерьер
+		for _, x in { -5.5, 5.5 } do
+			local pil = makePart({
+				Name = ("Hermitage_PortalPil_%d"):format(x),
+				Size = Vector3.new(2, 10.5, 2),
+				Position = Vector3.new(x, 5.25, -13.8),
+				Color = WHITE,
+				Material = Enum.Material.Marble,
+				Shape = Enum.PartType.Cylinder,
+				Parent = model,
+			})
+			pil.Orientation = Vector3.new(0, 0, 90)
+		end
+		steppedPediment(model, "Hermitage_Portal", Vector3.new(0, 0, -13.6), 17, 11, 3)
+	end
+end
+
+-- Главный штаб: ступенчатый фронтон + оконный ряд
+do
+	local model = getBuilding("Building_GeneralStaff")
+	if model and not model:FindFirstChild("Staff_Pediment_T1") then
+		steppedPediment(model, "Staff_Pediment", Vector3.new(0, 0, 120), 60, 36, 18)
+		makePart({
+			Name = "Staff_Windows",
+			Size = Vector3.new(200, 3, 0.4),
+			Position = Vector3.new(0, 12, 111.8),
+			Color = DARK,
+			Material = Enum.Material.Glass,
+			CanCollide = false,
+			Parent = model,
+		})
+	end
+end
+
+-- Казанский собор: полукруглая колоннада к Невскому + купол и фронтон
+do
+	local model = getBuilding("Building_Kazansky")
+	if model and not model:FindFirstChild("Kazansky_ArcCol_00") then
+		for t = 0, 10 do
+			local angle = math.rad(180 + t * 18)
+			local col = makePart({
+				Name = ("Kazansky_ArcCol_%02d"):format(t),
+				Size = Vector3.new(4.5, 18, 4.5),
+				Position = Vector3.new(430 + math.cos(angle) * 55, 9, 66 + math.sin(angle) * 55),
+				Color = Color3.fromRGB(190, 185, 170),
+				Material = Enum.Material.Marble,
+				Shape = Enum.PartType.Cylinder,
+				Parent = model,
+			})
+			col.Orientation = Vector3.new(0, 0, 90)
+			-- Капитель
+			makePart({
+				Name = ("Kazansky_ArcCap_%02d"):format(t),
+				Size = Vector3.new(6.5, 2, 6.5),
+				Position = Vector3.new(430 + math.cos(angle) * 55, 19, 66 + math.sin(angle) * 55),
+				Color = WHITE,
+				Parent = model,
+			})
+		end
+		-- Купол на барабане над фасадом
+		local drum = makePart({
+			Name = "Kazansky_Drum",
+			Size = Vector3.new(20, 10, 20),
+			Position = Vector3.new(430, 31, 66),
+			Color = Color3.fromRGB(170, 165, 155),
+			Shape = Enum.PartType.Cylinder,
+			Parent = model,
+		})
+		drum.Orientation = Vector3.new(0, 0, 90)
+		makePart({
+			Name = "Kazansky_Dome",
+			Size = Vector3.new(18, 18, 18),
+			Position = Vector3.new(430, 42, 66),
+			Color = Color3.fromRGB(90, 120, 150),
+			Material = Enum.Material.Metal,
+			Shape = Enum.PartType.Ball,
+			Parent = model,
+		})
+		steppedPediment(model, "Kazansky_Pediment", Vector3.new(430, 0, 55), 60, 26, 6)
+	end
+end
+
+-- Исаакий: ступенчатый фронтон + балюстрада барабана
+do
+	local model = getBuilding("Building_Isaakiy")
+	if model and not model:FindFirstChild("Isaakiy_Pediment_T1") then
+		steppedPediment(model, "Isaakiy_Pediment", Vector3.new(-160, 0, 184.6), 66, 31, 5)
+		makePart({
+			Name = "Isaakiy_DrumBalustrade",
+			Size = Vector3.new(46, 1.2, 46),
+			Position = Vector3.new(-160, 60.6, 240),
+			Color = WHITE,
+			Material = Enum.Material.Marble,
+			Parent = model,
+		})
+	end
+end
+
+-- Спас на Крови: лантерны над всеми пятью главами + два шатра по углам
+do
+	local model = getBuilding("Building_Spas")
+	if model and not model:FindFirstChild("Spas_Lantern_1") then
+		local domes = {
+			{ 1, Vector3.new(760, 82, 60) },
+			{ 2, Vector3.new(738, 57, 40) },
+			{ 3, Vector3.new(782, 57, 80) },
+			{ 4, Vector3.new(738, 57, 80) },
+			{ 5, Vector3.new(782, 57, 40) },
+		}
+		for _, d in domes do
+			local i, top = d[1], d[2]
+			local lan = makePart({
+				Name = ("Spas_Lantern_%d"):format(i),
+				Size = Vector3.new(2.4, 3.4, 2.4),
+				Position = top,
+				Color = GOLD,
+				Material = Enum.Material.Metal,
+				Shape = Enum.PartType.Cylinder,
+				Parent = model,
+			})
+			lan.Orientation = Vector3.new(0, 0, 90)
+			makePart({
+				Name = ("Spas_LanternTip_%d"):format(i),
+				Size = Vector3.new(1.2, 1.6, 1.2),
+				Position = top + Vector3.new(0, 2.4, 0),
+				Color = Color3.fromRGB(255, 235, 140),
+				Shape = Enum.PartType.Ball,
+				Parent = model,
+			})
+		end
+
+		-- Кирпичные угловые шатры с белым поясом
+		for _, spec in { { "SW", 725, 25 }, { "NE", 795, 95 } } do
+			local tag, x, z = spec[1], spec[2], spec[3]
+			local tent = makePart({
+				Name = ("Spas_Tent_%s"):format(tag),
+				Size = Vector3.new(10, 30, 10),
+				Position = Vector3.new(x, 15, z),
+				Color = BRICK,
+				Shape = Enum.PartType.Cylinder,
+				Parent = model,
+			})
+			tent.Orientation = Vector3.new(0, 0, 90)
+			local band = makePart({
+				Name = ("Spas_TentBand_%s"):format(tag),
+				Size = Vector3.new(10.4, 2, 10.4),
+				Position = Vector3.new(x, 26, z),
+				Color = WHITE,
+				Shape = Enum.PartType.Cylinder,
+				Parent = model,
+			})
+			band.Orientation = Vector3.new(0, 0, 90)
+			makePart({
+				Name = ("Spas_TentTop_%s"):format(tag),
+				Size = Vector3.new(9, 9, 9),
+				Position = Vector3.new(x, 32.5, z),
+				Color = Color3.fromRGB(70, 140, 90),
+				Shape = Enum.PartType.Ball,
+				Parent = model,
+			})
+		end
+	end
+end
+
+-- Жилые корпуса вдоль Невского (северная и южная стороны)
+do
+	if not buildingsFolder:FindFirstChild("Nevsky_House_N1") then
+		local houses = {
+			-- Северная сторона (z = -62, глубина 20)
+			{ "N1", 180, -62, 22 },
+			{ "N2", 255, -62, 26 },
+			{ "N3", 330, -62, 18 },
+			{ "N4", 505, -62, 22 },
+			{ "N5", 580, -62, 26 },
+			{ "N6", 655, -62, 18 },
+			-- Южная сторона (z = 82, глубина 20)
+			{ "S1", 220, 82, 20 },
+			{ "S2", 320, 82, 24 },
+			{ "S3", 545, 82, 20 },
+			{ "S4", 610, 82, 24 },
+			{ "S5", 675, 82, 20 },
+		}
+		local palettes = {
+			Color3.fromRGB(195, 170, 130),
+			Color3.fromRGB(170, 150, 175),
+			Color3.fromRGB(150, 165, 185),
+		}
+		for index, h in houses do
+			local model = Instance.new("Model")
+			model.Name = ("Nevsky_House_%s"):format(h[1])
+			model.Parent = buildingsFolder
+
+			local body = makePart({
+				Name = "Body",
+				Size = Vector3.new(60, h[4], 20),
+				Position = Vector3.new(h[2], h[4] / 2, h[3]),
+				Color = palettes[(index % #palettes) + 1],
+				Material = Enum.Material.Pebble,
+				Parent = model,
+			})
+			-- Карниз + оконный ряд со стороны улицы
+			makePart({
+				Name = "Cornice",
+				Size = Vector3.new(60.5, 1.2, 20.5),
+				Position = Vector3.new(h[2], h[4] - 1, h[3]),
+				Color = WHITE,
+				Parent = model,
+			})
+			makePart({
+				Name = "Windows",
+				Size = Vector3.new(56, 2.4, 0.4),
+				Position = Vector3.new(h[2], h[4] * 0.55, h[3] + (if h[3] < 0 then -10.2 else 10.2)),
+				Color = DARK,
+				Material = Enum.Material.Glass,
+				CanCollide = false,
+				Parent = model,
+			})
+			model.PrimaryPart = body
+		end
+	end
+end
+
+-- Дворцовая: мощёные кольца вокруг Александровской колонны
+do
+	if not propsFolder:FindFirstChild("Dvortsovaya_Disc_1") then
+		for i, spec in
+			{
+				{ 160, 0.25, Color3.fromRGB(150, 148, 140) },
+				{ 105, 0.3, Color3.fromRGB(170, 163, 148) },
+				{ 60, 0.35, Color3.fromRGB(140, 140, 135) },
+			}
+		do
+			local disc = makePart({
+				Name = ("Dvortsovaya_Disc_%d"):format(i),
+				Size = Vector3.new(spec[1], spec[2], spec[1]),
+				Position = Vector3.new(0, spec[2] / 2, 0),
+				Color = spec[3],
+				Material = Enum.Material.Pebble,
+				Shape = Enum.PartType.Cylinder,
+				Parent = propsFolder,
+			})
+			disc.Orientation = Vector3.new(0, 0, 90)
+		end
+	end
+end
+
+-- Мост: опоры в воде + золочёные пьедесталы-фонари (без света — п.4.4)
+do
+	if not propsFolder:FindFirstChild("DvortsovyBridge_Pier_1") then
+		for i, z in { -430, -520 } do
+			local pier = makePart({
+				Name = ("DvortsovyBridge_Pier_%d"):format(i),
+				Size = Vector3.new(14, 6, 14),
+				Position = Vector3.new(-130, -3, z),
+				Color = GRANITE,
+				Shape = Enum.PartType.Cylinder,
+				Parent = propsFolder,
+			})
+			pier.Orientation = Vector3.new(0, 0, 90)
+		end
+		for _, spec in { { -137, -180 }, { -123, -180 }, { -137, -565 }, { -123, -565 } } do
+			makePart({
+				Name = ("DvortsovyBridge_LampBase_%d_%d"):format(spec[1], spec[2]),
+				Size = Vector3.new(2, 5, 2),
+				Position = Vector3.new(spec[1], 5, spec[2]),
+				Color = DARK,
+				Material = Enum.Material.Metal,
+				Parent = propsFolder,
+			})
+			makePart({
+				Name = ("DvortsovyBridge_LampCap_%d_%d"):format(spec[1], spec[2]),
+				Size = Vector3.new(1.4, 1.4, 1.4),
+				Position = Vector3.new(spec[1], 8.2, spec[2]),
+				Color = Color3.fromRGB(255, 240, 170),
+				Material = Enum.Material.Neon,
+				Shape = Enum.PartType.Ball,
+				Parent = propsFolder,
+			})
+		end
+	end
+end
+
 print(
-	"[SPB Landmarks] Арт-пасс применён: колоннады, купола, мосты, парапеты, канал, деревья."
+	"[SPB Landmarks] Арт-проход v3: Адмиралтейство, крылья дворца, арка Казанского, дома Невского, луковки, фронтоны."
 )
