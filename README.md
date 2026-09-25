@@ -85,6 +85,7 @@ src/
 │   │   └── PlayerDataService.lua -- ProfileStore сессии, мутаторы, PurchaseLog
 │   ├── Monetization/
 │   │   ├── MonetizationController.lua -- пассы: кэш, фичи, промпты
+│   │   ├── VipBadgeService.lua   -- значок VIP-фотографа над головой
 │   │   └── ProductHandler.lua    -- ProcessReceipt: idempotency + SaveNow
 │   ├── Zones/ZoneService.lua     -- ZonePlus-обвязка: зоны, фото-точки, эмбиент
 │   ├── Lighting/LightingController.lua -- цикл суток, пресеты, фонари, «Хронос»

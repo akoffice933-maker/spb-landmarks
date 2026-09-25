@@ -261,6 +261,7 @@ function PlayerDataService.CacheOwnedPasses(player: Player, owned: { [string]: b
 	end
 
 	pushSnapshot(player)
+	PlayerDataService.DataChanged:Fire(player, "OwnedPasses")
 end
 
 --=== Работа с чеками (идемпотентность ProcessReceipt, п.7.4) =====================

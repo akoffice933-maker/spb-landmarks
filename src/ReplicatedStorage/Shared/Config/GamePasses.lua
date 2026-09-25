@@ -23,7 +23,7 @@ local GamePasses: { [string]: GamePassDef } = {
 		Key = "VIPPhotographer",
 		Id = 0,
 		DisplayName = "VIP-фотограф",
-		Description = "Золотая рамка в Photo Spot, значок над головой и эксклюзивные позы.",
+		Description = "Золотая рамка в Photo Spot и значок над головой в городе.",
 		Feature = "VipPhotoFrame",
 		EnabledAtRelease = true,
 	},
