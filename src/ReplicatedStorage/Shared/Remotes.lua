@@ -47,6 +47,8 @@ Remotes.Names = {
 	RequestLightingMode = "RequestLightingMode",
 	RequestLightingTime = "RequestLightingTime",
 	OnboardingCompleted = "OnboardingCompleted",
+	RequestWardrobe = "RequestWardrobe",
+	RequestPose = "RequestPose",
 
 	-- RemoteFunction (клиент запрашивает, сервер отвечает)
 	GetInfoBoard = "GetInfoBoard",

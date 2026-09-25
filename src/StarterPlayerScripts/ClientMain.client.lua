@@ -31,6 +31,7 @@ local SpawnChoiceUI = require(StarterPlayerScripts:WaitForChild("UI").SpawnChoic
 local TeleportFade = require(StarterPlayerScripts:WaitForChild("UI").TeleportFade)
 local OnboardingUI = require(StarterPlayerScripts:WaitForChild("UI").OnboardingUI)
 local EraUI = require(StarterPlayerScripts:WaitForChild("UI").EraUI)
+local AvatarStudioUI = require(StarterPlayerScripts:WaitForChild("UI").AvatarStudioUI)
 local TopbarUI = require(StarterPlayerScripts:WaitForChild("UI").TopbarUI)
 
 -- Контроллеры
@@ -57,6 +58,7 @@ TeleportFade.Start()
 OnboardingUI.Start()
 HUDUI.Start()
 EraUI.Start()
+AvatarStudioUI.Start()
 TopbarUI.Start()
 UISoundClient.Start()
 

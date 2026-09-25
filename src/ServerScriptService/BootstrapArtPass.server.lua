@@ -1124,6 +1124,157 @@ do
 	end
 end
 
+--================================================================================
+-- ХУДОЖЕСТВЕННЫЙ ПРОХОД (v5-мини): буйки, голуби, расписание разводки моста.
+-- Расписание — единственная «анимация» всего арт-пасса: крыла и полосы
+-- опускаются/поднимаются TweenService'ом по кругу. Света по-прежнему 0.
+--================================================================================
+
+-- Буйки на Неве (рыбацкая маркировка фарватера)
+do
+	if not propsFolder:FindFirstChild("Neva_Buoy_01") then
+		for index, spec in
+			{
+				{ -280, -430, true },
+				{ -80, -500, false },
+				{ 120, -445, true },
+				{ 300, -505, false },
+				{ 480, -455, true },
+				{ -200, -520, false },
+			}
+		do
+			local x, z, isRed = spec[1], spec[2], spec[3]
+			makePart({
+				Name = ("Neva_Buoy_%02d"):format(index),
+				Size = Vector3.new(2, 2, 2),
+				Position = Vector3.new(x, 0.4, z),
+				Color = if isRed then Color3.fromRGB(190, 60, 50) else Color3.fromRGB(235, 230, 220),
+				Shape = Enum.PartType.Ball,
+				CanCollide = false,
+				Parent = propsFolder,
+			})
+			makePart({
+				Name = ("Neva_BuoyPole_%02d"):format(index),
+				Size = Vector3.new(0.5, 3, 0.5),
+				Position = Vector3.new(x, 2, z),
+				Color = if isRed then Color3.fromRGB(235, 230, 220) else Color3.fromRGB(190, 60, 50),
+				CanCollide = false,
+				Parent = propsFolder,
+			})
+		end
+	end
+end
+
+-- Голуби Дворцовой: стая у колонны + четверо в полёте
+do
+	if not propsFolder:FindFirstChild("Dvortsovaya_Pigeon_01") then
+		local GRAY = Color3.fromRGB(120, 122, 126)
+		local DARKGREY = Color3.fromRGB(85, 87, 92)
+		local spots = {
+			{ 8, 0.85, 6 },
+			{ -12, 0.6, -5 },
+			{ 15, 0.6, 11 },
+			{ -7, 0.6, 14 },
+			{ 20, 0.6, -9 },
+			{ -18, 0.6, 3 },
+			{ 4, 0.6, -14 },
+			{ -3, 0.6, 20 },
+		}
+		for index, p in spots do
+			makePart({
+				Name = ("Dvortsovaya_Pigeon_%02d"):format(index),
+				Size = Vector3.new(0.5, 0.5, 0.5),
+				Position = Vector3.new(p[1], p[2] + 0.25, p[3]),
+				Color = GRAY,
+				Shape = Enum.PartType.Ball,
+				CanCollide = false,
+				Parent = propsFolder,
+			})
+			makePart({
+				Name = ("Dvortsovaya_PigeonHead_%02d"):format(index),
+				Size = Vector3.new(0.3, 0.3, 0.3),
+				Position = Vector3.new(p[1], p[2] + 0.52, p[3] - 0.25),
+				Color = DARKGREY,
+				Shape = Enum.PartType.Ball,
+				CanCollide = false,
+				Parent = propsFolder,
+			})
+		end
+		-- Летящие над площадью (крылья желобками)
+		for index, p in { { 30, 28, -20 }, { -25, 32, -30 }, { 12, 26, -45 }, { -10, 30, 30 } } do
+			makePart({
+				Name = ("Dvortsovaya_PigeonFly_%02d"):format(index),
+				Size = Vector3.new(0.55, 0.55, 0.55),
+				Position = Vector3.new(p[1], p[2], p[3]),
+				Color = GRAY,
+				Shape = Enum.PartType.Ball,
+				CanCollide = false,
+				Parent = propsFolder,
+			})
+			for _side, spec in { { "L", -0.65, 18 }, { "R", 0.65, -18 } } do
+				local wing = makePart({
+					Name = ("Dvortsovaya_PigeonWing_%02d_%s"):format(index, spec[1]),
+					Size = Vector3.new(0.8, 0.06, 0.35),
+					Position = Vector3.new(p[1] + spec[2] * 0.55, p[2] + 0.35, p[3]),
+					Color = DARKGREY,
+					CanCollide = false,
+					Parent = propsFolder,
+				})
+				wing.Orientation = Vector3.new(0, 0, spec[3])
+			end
+		end
+	end
+end
+
+-- Расписание Дворцового моста: по кругу поднятие/опускание крыльев.
+-- Цикл: 5 минут опущен (ход пешеходов) → 20с подъём → 3 минуты разведён → ночной покой.
+do
+	local leafA = propsFolder:FindFirstChild("DvortsovyBridge_Leaf_A")
+	local leafB = propsFolder:FindFirstChild("DvortsovyBridge_Leaf_B")
+	local stripeA = propsFolder:FindFirstChild("DvortsovyBridge_LeafStripe_A")
+	local stripeB = propsFolder:FindFirstChild("DvortsovyBridge_LeafStripe_B")
+	if leafA and leafB and stripeA and stripeB and not propsFolder:FindFirstChild("DvortsovyBridge_ScheduleOn") then
+		local flag = Instance.new("BoolValue")
+		flag.Name = "DvortsovyBridge_ScheduleOn"
+		flag.Value = true
+		flag.Parent = propsFolder
+
+		local TweenService = game:GetService("TweenService")
+		local TWEEN_TIME = 20
+		local CLOSED_TIME = 300
+		local OPEN_TIME = 180
+
+		local LEAF_A_OPEN = CFrame.new(-130, 9.6, -460) * CFrame.Angles(math.rad(30), 0, 0)
+		local LEAF_A_CLOSED = CFrame.new(-130, 2.0, -462)
+		local LEAF_B_OPEN = CFrame.new(-130, 9.6, -490) * CFrame.Angles(math.rad(-30), 0, 0)
+		local LEAF_B_CLOSED = CFrame.new(-130, 2.0, -488)
+		local STRIPE_A_OPEN = CFrame.new(-130, 24.5, -471)
+		local STRIPE_A_CLOSED = CFrame.new(-130, 2.6, -474)
+		local STRIPE_B_OPEN = CFrame.new(-130, 24.5, -479)
+		local STRIPE_B_CLOSED = CFrame.new(-130, 2.6, -476)
+
+		local function setState(open: boolean)
+			local info = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+			TweenService:Create(leafA, info, { CFrame = if open then LEAF_A_OPEN else LEAF_A_CLOSED }):Play()
+			TweenService:Create(leafB, info, { CFrame = if open then LEAF_B_OPEN else LEAF_B_CLOSED }):Play()
+			TweenService:Create(stripeA, info, { CFrame = if open then STRIPE_A_OPEN else STRIPE_A_CLOSED }):Play()
+			TweenService:Create(stripeB, info, { CFrame = if open then STRIPE_B_OPEN else STRIPE_B_CLOSED }):Play()
+		end
+
+		task.spawn(function()
+			-- Сервер стартует с поднятых (v4) крыльев: плавно опустим
+			setState(false)
+			while true do
+				task.wait(CLOSED_TIME)
+				setState(true)
+				task.wait(OPEN_TIME + TWEEN_TIME)
+				setState(false)
+				task.wait(TWEEN_TIME)
+			end
+		end)
+	end
+end
+
 print(
-	"[SPB Landmarks] Арт-проход v4: разводной пролёт, львы у спусков, крылья квадриги, разметка, ограда Летнего сада."
+	"[SPB Landmarks] Арт-проход v5: буйки Невы, голуби Дворцовой, расписание разводки моста."
 )
