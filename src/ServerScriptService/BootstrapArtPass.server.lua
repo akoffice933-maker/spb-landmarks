@@ -705,15 +705,17 @@ do
 			Shape = Enum.PartType.Ball,
 			Parent = model,
 		})
-		steppedPediment(model, "Kazansky_Pediment", Vector3.new(430, 0, 55), 60, 26, 6)
+		-- Фронтон выступает к Невскому: грань фасада z=54, центр z=51 (весь наружу)
+		steppedPediment(model, "Kazansky_Pediment", Vector3.new(430, 0, 51), 60, 26, 6)
 	end
 end
 
--- Исаакий: ступенчатый фронтон + балюстрада барабана
+-- Исаакий: ступенчатый фронтон снаружи передней грани (f=185) + балюстрада барабана
 do
 	local model = getBuilding("Building_Isaakiy")
 	if model and not model:FindFirstChild("Isaakiy_Pediment_T1") then
-		steppedPediment(model, "Isaakiy_Pediment", Vector3.new(-160, 0, 184.6), 66, 31, 5)
+		-- Глубина 5 при центре z=182 → целиком на площади, не заходит в стену
+		steppedPediment(model, "Isaakiy_Pediment", Vector3.new(-160, 0, 182.0), 66, 33, 5)
 		makePart({
 			Name = "Isaakiy_DrumBalustrade",
 			Size = Vector3.new(46, 1.2, 46),
@@ -827,7 +829,7 @@ do
 				Material = Enum.Material.Pebble,
 				Parent = model,
 			})
-			-- Карниз + оконный ряд со стороны улицы
+			-- Карниз у крыши
 			makePart({
 				Name = "Cornice",
 				Size = Vector3.new(60.5, 1.2, 20.5),
@@ -835,10 +837,12 @@ do
 				Color = WHITE,
 				Parent = model,
 			})
+			-- Оконный ряд: всегда со стороны проезжей Невского
+			-- (северные дома смотрят окнами на +z, южные — на −z)
 			makePart({
 				Name = "Windows",
 				Size = Vector3.new(56, 2.4, 0.4),
-				Position = Vector3.new(h[2], h[4] * 0.55, h[3] + (if h[3] < 0 then -10.2 else 10.2)),
+				Position = Vector3.new(h[2], h[4] * 0.55, h[3] + (if h[3] < 0 then 10.2 else -10.2)),
 				Color = DARK,
 				Material = Enum.Material.Glass,
 				CanCollide = false,
